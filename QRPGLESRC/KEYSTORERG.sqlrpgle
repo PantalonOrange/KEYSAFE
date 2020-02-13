@@ -99,7 +99,6 @@ DCL-PROC loopFM_A;
 
  DCL-S Success IND INZ(TRUE);
 
-
  DCL-DS FMA LIKEREC(KEYSAFEAC :*ALL) INZ;
  //-------------------------------------------------------------------------
 
@@ -162,13 +161,16 @@ DCL-PROC fetchRecordsFM_A;
 
  DCL-S Success IND INZ(TRUE);
 
+ DCL-DS ResultDS QUALIFIED INZ;
+   Description_Short CHAR(30);
+   Remarks CHAR(80);
+ END-DS;
+
  DCL-DS SubfileDS QUALIFIED INZ;
    Color1 CHAR(1);
-   Sender CHAR(40);
-   Color2 CHAR(3);
-   SendDate CHAR(25);
-   Color3 CHAR(3);
-   Subject CHAR(50);
+   Description_Short CHAR(40);
+   Color2 CHAR(2);
+   Remarks CHAR(80);
  END-DS;
  //-------------------------------------------------------------------------
 
@@ -185,7 +187,24 @@ DCL-PROC fetchRecordsFM_A;
  WSDS.SubfileDisplay = TRUE;
  WSDS.SubfileMore = TRUE;
 
- If ( This.RecordsFound > 0 );
+ Exec SQL DECLARE C_MAIN_LOOP SCROLL CURSOR FOR
+           SELECT DESCRIPTION_SHORT, LEFT(REMARKS, 80) FROM KEYSAFE.MAIN_LOOP
+            WHERE MAIN_INDEX = :This.CatalogueGUID
+            ORDER BY DESCRIPTION_SHORT;
+ Exec SQL OPEN C_MAIN_LOOP;
+
+ DoW ( This.Loop );
+ 
+   Exec SQL FETCH NEXT FROM C_MAIN_LOOP INTO :ResultDS;
+   If ( SQLCode = 100 );
+     Exec SQL CLOSE C_MAIN_LOOP;
+     Leave;
+   EndIf;
+
+   SubfileDS.Color1 = COLOR_WHT;
+   SubfileDS.Description_Short = ResultDS.Description_Short;
+   SubfileDS.Color2 = COLOR_GRN;
+   SubfileDS.Remarks = ResultDS.Remarks;
 
    RecordNumber += 1;
    AS_Subfile_Line = SubfileDS;
@@ -198,15 +217,17 @@ DCL-PROC fetchRecordsFM_A;
    Else;
      RecordNumber = 1;
    EndIf;
+ 
+ EndDo;
 
- ElseIf ( This.RecordsFound = 0 );
+ If ( RecordNumber = 0 ) And ( This.GlobalMessage = '' );
    RecordNumber = 1;
    AS_Subfile_Line = retrieveMessageText('M000000');
    AS_Record_Number = RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
- Else;
+ ElseIf ( RecordNumber = 0 ) And ( This.GlobalMessage <> '' );
    RecordNumber = 1;
    AS_Subfile_Line = COLOR_BLU + This.GlobalMessage;
    AS_Record_Number = RecordNumber;
@@ -216,6 +237,7 @@ DCL-PROC fetchRecordsFM_A;
  EndIf;
 
 END-PROC;
+
 
 //**************************************************************************
 DCL-PROC setCatalogue;
@@ -267,7 +289,7 @@ DCL-PROC setCatalogue;
 
        When ( W0_Password = '' );
          W0_Current_Row = 4;
-         W0_Current_Column = 12;
+         W0_Current_Column = 13;
          W0_Message = retrieveMessageText('E000001');
          WSDS.WindowShowMessage = TRUE;
          Iter;
@@ -277,14 +299,15 @@ DCL-PROC setCatalogue;
                    WHERE CATALOGUE_NAME = :W0_Catalogue AND KEYTEST IS NULL;
          If Not Success;
            Exec SQL SET ENCRYPTION PASSWORD = :W0_Password;
-           Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT('1')
+           Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT_TDES('1')
                      WHERE CATALOGUE_NAME = :W0_Catalogue AND KEYTEST IS NULL;
          EndIf;
 
          Exec SQL SET ENCRYPTION PASSWORD = :W0_Password;
 
-         Exec SQL SELECT CASE WHEN DECRYPT_CHAR(KEYTEST) = '1' THEN '1'
-                              ELSE '0' END INTO :Success
+         Exec SQL SELECT IFNULL(GUID, ''),
+                         CASE WHEN DECRYPT_CHAR(KEYTEST) = '1' THEN '1'
+                              ELSE '0' END INTO :This.CatalogueGUID, :Success
                     FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue;
          Success = Success And ( SQLCode = 0 );

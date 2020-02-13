@@ -32,10 +32,6 @@ DCL-S RecordNumber UNS(10) INZ;
 DCL-S PgmQueue CHAR(10) INZ('MAIN');
 DCL-S CallStack INT(10) INZ;
 
-DCL-DS LogInDataDS_T TEMPLATE QUALIFIED;
-  Catalogue CHAR(30);
-END-DS;
-
 DCL-DS MessageHandling_T TEMPLATE QUALIFIED;
   Length INT(10);
   Key CHAR(4);
@@ -47,7 +43,7 @@ DCL-DS This QUALIFIED;
   Loop IND INZ(TRUE);
   RecordsFound INT(10) INZ;
   GlobalMessage CHAR(130) INZ;
-  LogInDataDS LIKEDS(LogInDataDS_T) INZ;
+  CatalogueGUID CHAR(32) INZ;
 END-DS;
 
 DCL-DS WSDS QUALIFIED;
