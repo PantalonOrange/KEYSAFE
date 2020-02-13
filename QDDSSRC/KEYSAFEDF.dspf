@@ -25,10 +25,12 @@
       **************************************************************************
                 R KEYSAFEAS                 SFL
 
-                  ASOPTI         1A  B 04 02ALIAS(AS_OPTION)
-                  ASLINE       128A  O 04 04ALIAS(AS_SUBFILE_LINE)
+                  ASOPTI         1A  B 07 02COLOR(TRQ) CHECK(ER)
+                                            ALIAS(AS_OPTION)
+                                            VALUES(' ' '1' '2' '4' '5')
+                  ASLINE       128A  O 07 04ALIAS(AS_SUBFILE_LINE)
 
-                  ASRECN         6  0H      ALIAS(AS_RECORDNUMBER)
+                  ASRECN         6  0H      ALIAS(AS_RECORD_NUMBER)
 
       **************************************************************************
                 R KEYSAFEAC                 OVERLAY INVITE
@@ -36,7 +38,7 @@
                                             CA05(05) CA06(06)
                                             CA09(09)
                                             SFLCTL(KEYSAFEAS)
-                                            SFLPAG(20) SFLSIZ(21)
+                                            SFLPAG(17) SFLSIZ(18)
         20                                  SFLCLR
         21                                  SFLDSPCTL
         22                                  SFLDSP
@@ -63,9 +65,15 @@
                   ACCPOS         4S 0H      ALIAS(AC_CURRENT_POSITION)
 
                   ACDEVICE      10A  O  2100ALIAS(AC_DEVICE)
-                  ACHEAD0       16A  O  2112MSGID(C000006 *LIBL/KEYMSGF)
-                  ACLIN00      130A  O  3  2DSPATR(UL) COLOR(BLU)
-                                            MSGID(C000008 *LIBL/KEYMSGF)
+                  ACHEAD0      130A  O  3  2MSGID(C000001 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+                  ACHEAD1      130A  O  4  2MSGID(C000002 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+                  ACHEAD2       10A  O  5  2MSGID(L000000 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+                  ACCATAL       30A  O  5 14COLOR(YLW) ALIAS(AC_CATALOGUE)
+                  ACLIN00      130A  O  6  2DSPATR(UL) COLOR(BLU)
+                                            MSGID(C000003 *LIBL/KEYMSGF)
 
 
       **************************************************************************
@@ -96,18 +104,20 @@
 
       **************************************************************************
                 R KEYSAFEW0                 OVERLAY
-                                            WINDOW(9 27 08 76 *NOMSGLIN)
+                                            WINDOW(9 27 07 76 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR BLU))
                                             WDWTITLE((*TEXT &W0TITLE) +
                                                       (*DSPATR RI) (*COLOR WHT))
-                                            CA03(03) CA12(12)
+                                            CA03(03) CA04(04) CA12(12)
                                             CSRLOC(W0CROW W0CCOL)
-                                            RTNCSRLOC(*MOUSE  &W0CROW &W0CCOL)
+                                            RTNCSRLOC(*MOUSE &W0CROW &W0CCOL)
                                             RTNCSRLOC(&W0CRCD &W0CFLD &W0CPOS)
                                             HLPTITLE('Log in')
                 H                           HLPPNLGRP('CATALOGUE' KEYHLP)
-                                            HLPARA(*FLD W0CATL)
+                                            HLPARA(*FLD W0CATA)
+                H                           HLPPNLGRP('PASSWORD' KEYHLP)
+                                            HLPARA(*FLD W0PASS)
                 H                           HLPPNLGRP('KEYSAFEW0' KEYHLP)
                                             HLPARA(*RCD)
 
@@ -118,10 +128,16 @@
                   W0CFLD        10A  H      ALIAS(W0_CURRENT_FIELD)
                   W0CPOS         4S 0H      ALIAS(W0_CURRENT_POSITION)
 
-                  W0CCATL        9A  O  2  2MSGID(C000001 *LIBL/KEYMSGF)
-                                            DSPATR(UL)
+                  W0CCATL       10A  O  2  2MSGID(L000000 *LIBL/KEYMSGF)
+                  W0CPASS       10A  O  4  2MSGID(L000001 *LIBL/KEYMSGF)
+                  W0CLINE       74A  O  5  2COLOR(BLU) DSPATR(UL)
+                  W0CFOOT       74A  O  6  2MSGID(F000001 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
 
-                  W0CATL        32A  B  2 12COLOR(YLW) ALIAS(W0_CATALOGUE)
+                  W0CATA        30A  B  2 13COLOR(YLW) ALIAS(W0_CATALOGUE)
                                             CHECK(LC)
         40                                  DSPATR(RI)
+                  W0PASS        60A  B  4 13COLOR(YLW) ALIAS(W0_PASSWORD)
+                                            CHECK(LC)
+        41                                  DSPATR(RI)
 
