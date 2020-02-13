@@ -1,0 +1,127 @@
+      * Copyright (c) 2020 Christian Brunner
+      *
+      * Permission is hereby granted, free of charge, to any person obtaining a copy
+      * of this software and associated documentation files (the "Software"), to deal
+      * in the Software without restriction, including without limitation the rights
+      * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+      * copies of the Software, and to permit persons to whom the Software is
+      * furnished to do so, subject to the following conditions:
+      *
+      * The above copyright notice and this permission notice shall be included in all
+      * copies or substantial portions of the Software.
+      *
+      * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+      * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+      * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+      * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+      * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+      * SOFTWARE.
+
+                                            DSPSIZ(27 132 *DS4) PRINT INDARA
+                                            ALTHELP(CA01) HELP
+                                            MSGLOC(27) ERRSFL
+
+      **************************************************************************
+                R KEYSAFEAS                 SFL
+
+                  ASOPTI         1A  B 04 02ALIAS(AS_OPTION)
+                  ASLINE       128A  O 04 04ALIAS(AS_SUBFILE_LINE)
+
+                  ASRECN         6  0H      ALIAS(AS_RECORDNUMBER)
+
+      **************************************************************************
+                R KEYSAFEAC                 OVERLAY INVITE
+                                            CA03(03) CA04(04)
+                                            CA05(05) CA06(06)
+                                            CA09(09)
+                                            SFLCTL(KEYSAFEAS)
+                                            SFLPAG(20) SFLSIZ(21)
+        20                                  SFLCLR
+        21                                  SFLDSPCTL
+        22                                  SFLDSP
+        23                                  SFLEND(*MORE)
+                                            CSRLOC(ACCROW ACCCOL)
+                                            RTNCSRLOC(*MOUSE &ACCROW &ACCCOL)
+                                            RTNCSRLOC(&ACCRCD &ACCFLD &ACCPOS)
+                                            SFLCSRRRN(&CURCUR)
+                                            HLPCLR
+                                            HLPTITLE('Secure key store')
+                H                           HLPPNLGRP('KEYSAFEAC' KEYHLP)
+                                            HLPARA(1 2 27 132)
+
+                  ACHEAD        60A     1  2MSGID(C000000 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+                                        1100USER
+                                        1112DATE EDTCDE(Y)
+                                        1124TIME
+                  CURCUR         5S 0H      ALIAS(AC_CURRENT_CURSOR)
+                  ACCROW         3S 0H      ALIAS(AC_CURRENT_ROW)
+                  ACCCOL         3S 0H      ALIAS(AC_CURRENT_COLUMN)
+                  ACCRCD        10A  H      ALIAS(AC_CURRENT_RECORD)
+                  ACCFLD        10A  H      ALIAS(AC_CURRENT_FIELD)
+                  ACCPOS         4S 0H      ALIAS(AC_CURRENT_POSITION)
+
+                  ACDEVICE      10A  O  2100ALIAS(AC_DEVICE)
+                  ACHEAD0       16A  O  2112MSGID(C000006 *LIBL/KEYMSGF)
+                  ACLIN00      130A  O  3  2DSPATR(UL) COLOR(BLU)
+                                            MSGID(C000008 *LIBL/KEYMSGF)
+
+
+      **************************************************************************
+                R KEYSAFEAF                 OVERLAY
+                  AFLIN01      130A  O 25 02DSPATR(UL) COLOR(BLU)
+                  AFLIN02      130A  O 26 02MSGID(C000009 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+
+      **************************************************************************
+                R KEYSAFEZS                 SFL
+                                            SFLMSGRCD(24)
+                  MESSAGEKEY                SFLMSGKEY
+                  PGMQUEUE                  SFLPGMQ(10)
+
+      **************************************************************************
+                R KEYSAVEZC                 SFLCTL(KEYSAFEZS)
+                                            CF01
+                                            KEEP
+                                            OVERLAY
+                                            PUTRETAIN
+                                            SFLDSP
+                                            SFLDSPCTL
+                                            SFLINZ
+       N88                                  SFLEND
+                                            SFLSIZ(2)
+                                            SFLPAG(1)
+                  PGMQUEUE                  SFLPGMQ(10)
+
+      **************************************************************************
+                R KEYSAFEW0                 OVERLAY
+                                            WINDOW(9 27 08 76 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR BLU))
+                                            WDWTITLE((*TEXT &W0TITLE) +
+                                                      (*DSPATR RI) (*COLOR WHT))
+                                            CA03(03) CA12(12)
+                                            CSRLOC(W0CROW W0CCOL)
+                                            RTNCSRLOC(*MOUSE  &W0CROW &W0CCOL)
+                                            RTNCSRLOC(&W0CRCD &W0CFLD &W0CPOS)
+                                            HLPTITLE('Log in')
+                H                           HLPPNLGRP('CATALOGUE' KEYHLP)
+                                            HLPARA(*FLD W0CATL)
+                H                           HLPPNLGRP('KEYSAFEW0' KEYHLP)
+                                            HLPARA(*RCD)
+
+                  W0TITLE       60A  P      ALIAS(W0_WINDOW_TITLE)
+                  W0CROW         3S 0H      ALIAS(W0_CURRENT_ROW)
+                  W0CCOL         3S 0H      ALIAS(W0_CURRENT_COLUMN)
+                  W0CRCD        10A  H      ALIAS(W0_CURRENT_RECORD)
+                  W0CFLD        10A  H      ALIAS(W0_CURRENT_FIELD)
+                  W0CPOS         4S 0H      ALIAS(W0_CURRENT_POSITION)
+
+                  W0CCATL        9A  O  2  2MSGID(C000001 *LIBL/KEYMSGF)
+                                            DSPATR(UL)
+
+                  W0CATL        32A  B  2 12COLOR(YLW) ALIAS(W0_CATALOGUE)
+                                            CHECK(LC)
+        40                                  DSPATR(RI)
+
