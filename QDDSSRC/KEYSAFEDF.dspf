@@ -25,24 +25,24 @@
       **************************************************************************
                 R KEYSAFEAS                 SFL
 
-                  ASOPTI         1A  B 07 02COLOR(TRQ) CHECK(ER)
+                  ASOPTI         1A  B 07 03COLOR(TRQ) CHECK(ER)
+       N40                                  DSPATR(PR ND)
                                             ALIAS(AS_OPTION)
                                             VALUES(' ' '1' '2' '4' '5')
-                  ASLINE       128A  O 07 04ALIAS(AS_SUBFILE_LINE)
+                  ASLINE       126A  O 07 06ALIAS(AS_SUBFILE_LINE)
 
                   ASRECN         6  0H      ALIAS(AS_RECORD_NUMBER)
 
       **************************************************************************
                 R KEYSAFEAC                 OVERLAY INVITE
-                                            CA03(03) CA04(04)
-                                            CA05(05) CA06(06)
-                                            CA09(09)
+                                            CA03(03) CA05(05)
+                                            CA06(06) CA09(09)
                                             SFLCTL(KEYSAFEAS)
                                             SFLPAG(17) SFLSIZ(18)
-        20                                  SFLCLR
-        21                                  SFLDSPCTL
-        22                                  SFLDSP
-        23                                  SFLEND(*MORE)
+        30                                  SFLCLR
+        31                                  SFLDSPCTL
+        32                                  SFLDSP
+        33                                  SFLEND(*MORE)
                                             CSRLOC(ACCROW ACCCOL)
                                             RTNCSRLOC(*MOUSE &ACCROW &ACCCOL)
                                             RTNCSRLOC(&ACCRCD &ACCFLD &ACCPOS)
@@ -52,11 +52,6 @@
                 H                           HLPPNLGRP('KEYSAFEAC' KEYHLP)
                                             HLPARA(1 2 27 132)
 
-                  ACHEAD        60A     1  2MSGID(C000000 *LIBL/KEYMSGF)
-                                            COLOR(BLU)
-                                        1100USER
-                                        1112DATE EDTCDE(Y)
-                                        1124TIME
                   CURCUR         5S 0H      ALIAS(AC_CURRENT_CURSOR)
                   ACCROW         3S 0H      ALIAS(AC_CURRENT_ROW)
                   ACCCOL         3S 0H      ALIAS(AC_CURRENT_COLUMN)
@@ -64,22 +59,35 @@
                   ACCFLD        10A  H      ALIAS(AC_CURRENT_FIELD)
                   ACCPOS         4S 0H      ALIAS(AC_CURRENT_POSITION)
 
-                  ACDEVICE      10A  O  2100ALIAS(AC_DEVICE)
-                  ACHEAD0      130A  O  3  2MSGID(C000001 *LIBL/KEYMSGF)
+                  ACHEAD0       60A     1  2MSGID(C000000 *LIBL/KEYMSGF)
                                             COLOR(BLU)
-                  ACHEAD1      130A  O  4  2MSGID(C000002 *LIBL/KEYMSGF)
+                                        1100DATE EDTCDE(Y)
+                                        1112TIME
+                  ACDEVIC       10A  O  1124ALIAS(AC_DEVICE)
+                  ACHEAD1       10A  O  2  2MSGID(L000000 *LIBL/KEYMSGF)
                                             COLOR(BLU)
-                  ACHEAD2       10A  O  5  2MSGID(L000000 *LIBL/KEYMSGF)
+                  ACCATAL       30A  O  2 14COLOR(YLW) ALIAS(AC_CATALOGUE)
+                                        2100'KEYSAFE'
+                                        2112USER
+                                        2124SYSNAME
+                  ACHEAD2      130A  O  3  2MSGID(C000001 *LIBL/KEYMSGF)
                                             COLOR(BLU)
-                  ACCATAL       30A  O  5 14COLOR(YLW) ALIAS(AC_CATALOGUE)
+                  ACHEAD3      130A  O  4  2MSGID(C000002 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+                                        5  4'>'
                   ACLIN00      130A  O  6  2DSPATR(UL) COLOR(BLU)
                                             MSGID(C000003 *LIBL/KEYMSGF)
+
+                  ACEFIND       30   B  5  6COLOR(WHT) ALIAS(AC_ENTRY_FIND)
+                                            CHECK(LC)
+                  ACRFIND       94   B  5 38COLOR(WHT) ALIAS(AC_REMARK_FIND)
+                                            CHECK(LC)
 
 
       **************************************************************************
                 R KEYSAFEAF                 OVERLAY
-                  AFLIN01      130A  O 25 02DSPATR(UL) COLOR(BLU)
-                  AFLIN02      130A  O 26 02MSGID(C000009 *LIBL/KEYMSGF)
+                  AFLIN01      130A  O 25  2DSPATR(UL) COLOR(BLU)
+                  AFLIN02      130A  O 26  2MSGID(F000000 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
       **************************************************************************
@@ -136,8 +144,9 @@
 
                   W0CATA        30A  B  2 13COLOR(YLW) ALIAS(W0_CATALOGUE)
                                             CHECK(LC)
-        40                                  DSPATR(RI)
-                  W0PASS        60A  B  4 13COLOR(YLW) ALIAS(W0_PASSWORD)
-                                            CHECK(LC)
-        41                                  DSPATR(RI)
+        50                                  DSPATR(RI)
+                  W0PASS        60A  B  4 13ALIAS(W0_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
+
+        51        W0MESS        74A  O  7  2COLOR(WHT) ALIAS(W0_MESSAGE)
 
