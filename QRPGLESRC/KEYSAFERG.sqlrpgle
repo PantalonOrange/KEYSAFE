@@ -22,12 +22,15 @@
 // Created by BRC on 13.02.2020
 
 // This program stores different login data in different catalogues encrypted by db2
-//  crypto-services
+//  crypto-services. Please also use telnet over tls :-)
 
 // CAUTION: ALPHA-VERSION
 
 // TO-DOs:
-//  + Everything
+//  + Create new catalogues or delete catalogues
+//  + Add, edit, delete or view catalogue entries
+//     - With option hind or show passwordfield
+//  + For the future maybe change masterpassword for a catalogue?
 
 
 /INCLUDE QRPGLECPY,H_SPECS
@@ -123,6 +126,7 @@ DCL-PROC loopFM_A;
        fetchRecordsFM_A();
 
      When WSDS.NewRecord;
+       //createNewCatalogueEntry();
 
      When WSDS.CommandLine;
        promptCommandLine();
@@ -261,7 +265,7 @@ DCL-PROC checkFM_A;
    If %EoF;
      Leave;
    EndIf;
-   
+
    Select;
      When ( AS_Option = '' );
        Iter;
