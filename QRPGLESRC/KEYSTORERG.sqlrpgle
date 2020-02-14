@@ -108,8 +108,6 @@ DCL-PROC loopFM_A;
 
  DoW ( This.PictureControl = FM_A );
 
-   AC_Catalogue = 'xxxx';
-
    Write KEYSAFEAF;
    Write KEYSAFEAC;
    ExFmt KEYSAFEAC;
@@ -149,9 +147,12 @@ DCL-PROC initFM_A;
  Clear KEYSAFEAC;
  Clear KEYSAFEAS;
 
- AC_Device = PSDS.JobName;
- 
+ EvalR AC_Device = %TrimR(PSDS.JobName);
  Success = setCatalogue();
+ AC_Catalogue = This.CatalogueName;
+ 
+ AC_Current_Row = 7;
+ AC_Current_Column = 3;
 
  Return Success;
 
@@ -168,7 +169,7 @@ DCL-PROC fetchRecordsFM_A;
 
  DCL-DS SubfileDS QUALIFIED INZ;
    Color1 CHAR(1);
-   Description_Short CHAR(40);
+   Description_Short CHAR(30);
    Color2 CHAR(2);
    Remarks CHAR(80);
  END-DS;
@@ -194,11 +195,21 @@ DCL-PROC fetchRecordsFM_A;
  Exec SQL OPEN C_MAIN_LOOP;
 
  DoW ( This.Loop );
- 
+
    Exec SQL FETCH NEXT FROM C_MAIN_LOOP INTO :ResultDS;
    If ( SQLCode = 100 );
      Exec SQL CLOSE C_MAIN_LOOP;
      Leave;
+     
+   ElseIf ( SQLCode <> 100 ) And ( SQLCode <> 0 );
+     Exec SQL GET DIAGNOSTICS CONDITION 1 :AS_Subfile_Line = MESSAGE_TEXT;
+     Exec SQL CLOSE C_MAIN_LOOP;
+     RecordNumber += 1;
+     AS_Record_Number = RecordNumber;
+     WSDS.ShowSubfileOption = FALSE;
+     Write KEYSAFEAS;
+     Leave;
+
    EndIf;
 
    SubfileDS.Color1 = COLOR_WHT;
@@ -217,19 +228,19 @@ DCL-PROC fetchRecordsFM_A;
    Else;
      RecordNumber = 1;
    EndIf;
- 
+
  EndDo;
 
  If ( RecordNumber = 0 ) And ( This.GlobalMessage = '' );
    RecordNumber = 1;
-   AS_Subfile_Line = retrieveMessageText('M000000');
+   AS_Subfile_Line = COLOR_GRN + retrieveMessageText('M000000');
    AS_Record_Number = RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
  ElseIf ( RecordNumber = 0 ) And ( This.GlobalMessage <> '' );
    RecordNumber = 1;
-   AS_Subfile_Line = COLOR_BLU + This.GlobalMessage;
+   AS_Subfile_Line = COLOR_WHT + This.GlobalMessage;
    AS_Record_Number = RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
@@ -246,9 +257,8 @@ DCL-PROC setCatalogue;
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
- WSDS.WindowErrorCatalogue = FALSE;
  WSDS.WindowShowMessage = FALSE;
- W0_Window_Title = retrieveMessageText('C000000');
+ W0_Window_Title = retrieveMessageText('W000000');
  Clear W0_Catalogue;
  Clear W0_Password;
 
@@ -258,7 +268,6 @@ DCL-PROC setCatalogue;
    ExFmt KEYSAFEW0;
 
    Reset Success;
-   WSDS.WindowErrorCatalogue = FALSE;
    WSDS.WindowShowMessage = FALSE;
 
    If WSDS.Exit;
@@ -266,10 +275,10 @@ DCL-PROC setCatalogue;
      This.PictureControl = FM_END;
      Success = FALSE;
      Leave;
-   
+
    ElseIf WSDS.NewRecord;
      //createNewCatalogue();
-   
+
    ElseIf WSDS.Cancel;
      Clear KEYSAFEW0;
      Success = TRUE;
@@ -282,7 +291,6 @@ DCL-PROC setCatalogue;
        When ( W0_Catalogue = '' );
          W0_Current_Row = 2;
          W0_Current_Column = 13;
-         WSDS.WindowErrorCatalogue = TRUE;
          W0_Message = retrieveMessageText('E000000');
          WSDS.WindowShowMessage = TRUE;
          Iter;
@@ -298,29 +306,120 @@ DCL-PROC setCatalogue;
          Exec SQL SELECT '0' INTO :Success FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue AND KEYTEST IS NULL;
          If Not Success;
+           If Not setCataloguePassword(W0_Catalogue);
+             W0_Message = retrieveMessageText('E000003');
+             WSDS.WindowShowMessage = TRUE;
+             Iter;
+           EndIf;
+         Else;
            Exec SQL SET ENCRYPTION PASSWORD = :W0_Password;
-           Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT_TDES('1')
-                     WHERE CATALOGUE_NAME = :W0_Catalogue AND KEYTEST IS NULL;
          EndIf;
 
-         Exec SQL SET ENCRYPTION PASSWORD = :W0_Password;
-
-         Exec SQL SELECT IFNULL(GUID, ''),
+         Exec SQL SELECT IFNULL(CATALOGUE_NAME, ''), IFNULL(GUID, ''),
                          CASE WHEN DECRYPT_CHAR(KEYTEST) = '1' THEN '1'
-                              ELSE '0' END INTO :This.CatalogueGUID, :Success
+                              ELSE '0' END 
+                    INTO :This.CatalogueName, :This.CatalogueGUID, :Success
                     FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue;
          Success = Success And ( SQLCode = 0 );
+         
          If Not Success And ( SQLCode <> 0 );
            Exec SQL GET DIAGNOSTICS CONDITION 1 :W0_Message = MESSAGE_TEXT;
            WSDS.WindowShowMessage = TRUE;
            Iter;
+           
          ElseIf Not Success And ( SQLCode = 0 );
            W0_Message = retrieveMessageText('E000001');
            WSDS.WindowShowMessage = TRUE;
            Iter;
+           
          ElseIf Success;
            Leave;
+           
+         EndIf;
+
+     EndSl;
+
+   EndIf;
+
+ EndDo;
+
+ Return Success;
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC setCataloguePassword;
+ DCL-PI *N IND;
+   pCatalogueName CHAR(30) CONST;
+ END-PI;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+ WSDS.WindowShowMessage = FALSE;
+ W1_Window_Title = retrieveMessageText('W000001');
+ Clear W1_Password;
+ Clear W1_Check_Password;
+
+ DoW ( This.Loop );
+
+   Write KEYSAFEW1;
+   ExFmt KEYSAFEW1;
+
+   Reset Success;
+   WSDS.WindowShowMessage = FALSE;
+
+   If WSDS.Exit;
+     Clear KEYSAFEW1;
+     Success = FALSE;
+     Leave;
+
+   Else;
+
+     Select;
+
+       When ( W1_Password = '' );
+         W1_Current_Row = 2;
+         W1_Current_Column = 13;
+         W1_Message = retrieveMessageText('E000000');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( W1_Check_Password = '' );
+         W1_Current_Row = 4;
+         W1_Current_Column = 13;
+         W1_Message = retrieveMessageText('E000001');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( W1_Password <> W1_Check_Password );
+         W1_Current_Row = 4;
+         W1_Current_Column = 13;
+         W1_Message = retrieveMessageText('E000002');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       Other;
+         Exec SQL SET ENCRYPTION PASSWORD = :W1_Password;
+         Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT_TDES('1')
+                     WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL;
+         Success = Success And ( SQLCode = 0 );
+
+         If Not Success And ( SQLCode <> 0 );
+           Exec SQL GET DIAGNOSTICS CONDITION 1 :W1_Message = MESSAGE_TEXT;
+           WSDS.WindowShowMessage = TRUE;
+           Iter;
+
+         ElseIf Not Success And ( SQLCode = 0 );
+           W1_Message = retrieveMessageText('E000002');
+           WSDS.WindowShowMessage = TRUE;
+           Iter;
+
+         ElseIf Success;
+           Leave;
+
          EndIf;
 
      EndSl;

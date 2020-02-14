@@ -44,6 +44,7 @@ DCL-DS This QUALIFIED;
   RecordsFound INT(10) INZ;
   GlobalMessage CHAR(130) INZ;
   CatalogueGUID CHAR(32) INZ;
+  CatalogueName CHAR(40) INZ;
 END-DS;
 
 DCL-DS WSDS QUALIFIED;
@@ -57,6 +58,5 @@ DCL-DS WSDS QUALIFIED;
   SubfileDisplay IND POS(32);
   SubfileMore IND POS(33);
   ShowSubfileOption IND POS(40);
-  WindowErrorCatalogue IND POS(50);
-  WindowShowMessage IND POS(51);
+  WindowShowMessage IND POS(50);
 END-DS;

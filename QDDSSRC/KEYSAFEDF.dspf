@@ -29,7 +29,7 @@
        N40                                  DSPATR(PR ND)
                                             ALIAS(AS_OPTION)
                                             VALUES(' ' '1' '2' '4' '5')
-                  ASLINE       126A  O 07 06ALIAS(AS_SUBFILE_LINE)
+                  ASLINE       127A  O 07 05ALIAS(AS_SUBFILE_LINE)
 
                   ASRECN         6  0H      ALIAS(AS_RECORD_NUMBER)
 
@@ -59,35 +59,35 @@
                   ACCFLD        10A  H      ALIAS(AC_CURRENT_FIELD)
                   ACCPOS         4S 0H      ALIAS(AC_CURRENT_POSITION)
 
-                  ACHEAD0       60A     1  2MSGID(C000000 *LIBL/KEYMSGF)
-                                            COLOR(BLU)
+                  AC0HEAD       60A     1  2MSGID(C000000 *LIBL/KEYMSGF)
+                                            COLOR(WHT)
                                         1100DATE EDTCDE(Y)
                                         1112TIME
-                  ACDEVIC       10A  O  1124ALIAS(AC_DEVICE)
-                  ACHEAD1       10A  O  2  2MSGID(L000000 *LIBL/KEYMSGF)
+                  ACDEVIC       10A  O  1122ALIAS(AC_DEVICE)
+                  AC1HEAD       10A  O  2  2MSGID(L000000 *LIBL/KEYMSGF)
                                             COLOR(BLU)
-                  ACCATAL       30A  O  2 14COLOR(YLW) ALIAS(AC_CATALOGUE)
+                  ACCATAL       30A  O  2 14COLOR(GRN) ALIAS(AC_CATALOGUE)
                                         2100'KEYSAFE'
                                         2112USER
                                         2124SYSNAME
-                  ACHEAD2      130A  O  3  2MSGID(C000001 *LIBL/KEYMSGF)
+                  AC2HEAD      130A  O  3  2MSGID(C000001 *LIBL/KEYMSGF)
                                             COLOR(BLU)
-                  ACHEAD3      130A  O  4  2MSGID(C000002 *LIBL/KEYMSGF)
+                  AC3HEAD      130A  O  4  2MSGID(C000002 *LIBL/KEYMSGF)
                                             COLOR(BLU)
                                         5  4'>'
-                  ACLIN00      130A  O  6  2DSPATR(UL) COLOR(BLU)
+                  ACLINE0      130A  O  6  2DSPATR(UL) COLOR(BLU)
                                             MSGID(C000003 *LIBL/KEYMSGF)
 
-                  ACEFIND       30   B  5  6COLOR(WHT) ALIAS(AC_ENTRY_FIND)
+                  ACEFIND       30   B  5  6COLOR(YLW) ALIAS(AC_ENTRY_FIND)
                                             CHECK(LC)
-                  ACRFIND       94   B  5 38COLOR(WHT) ALIAS(AC_REMARK_FIND)
+                  ACRFIND       94   B  5 38COLOR(YLW) ALIAS(AC_REMARK_FIND)
                                             CHECK(LC)
 
 
       **************************************************************************
                 R KEYSAFEAF                 OVERLAY
-                  AFLIN01      130A  O 25  2DSPATR(UL) COLOR(BLU)
-                  AFLIN02      130A  O 26  2MSGID(F000000 *LIBL/KEYMSGF)
+                  AFLINE1      130A  O 25  2DSPATR(UL) COLOR(BLU)
+                  AFLINE2      130A  O 26  2MSGID(F000000 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
       **************************************************************************
@@ -115,7 +115,7 @@
                                             WINDOW(9 27 07 76 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR BLU))
-                                            WDWTITLE((*TEXT &W0TITLE) +
+                                            WDWTITLE((*TEXT &W0TITL) +
                                                       (*DSPATR RI) (*COLOR WHT))
                                             CA03(03) CA04(04) CA12(12)
                                             CSRLOC(W0CROW W0CCOL)
@@ -129,7 +129,7 @@
                 H                           HLPPNLGRP('KEYSAFEW0' KEYHLP)
                                             HLPARA(*RCD)
 
-                  W0TITLE       60A  P      ALIAS(W0_WINDOW_TITLE)
+                  W0TITL        60A  P      ALIAS(W0_WINDOW_TITLE)
                   W0CROW         3S 0H      ALIAS(W0_CURRENT_ROW)
                   W0CCOL         3S 0H      ALIAS(W0_CURRENT_COLUMN)
                   W0CRCD        10A  H      ALIAS(W0_CURRENT_RECORD)
@@ -144,9 +144,47 @@
 
                   W0CATA        30A  B  2 13COLOR(YLW) ALIAS(W0_CATALOGUE)
                                             CHECK(LC)
-        50                                  DSPATR(RI)
                   W0PASS        60A  B  4 13ALIAS(W0_PASSWORD)
                                             CHECK(LC) DSPATR(ND)
 
-        51        W0MESS        74A  O  7  2COLOR(WHT) ALIAS(W0_MESSAGE)
+        50        W0MESS        74A  O  7  2COLOR(WHT) ALIAS(W0_MESSAGE)
+
+      **************************************************************************
+                R KEYSAFEW1                 OVERLAY
+                                            WINDOW(9 27 07 76 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR YLW))
+                                            WDWTITLE((*TEXT &W1TITL) +
+                                                      (*DSPATR RI) (*COLOR WHT))
+                                            CA03(03) CA12(12)
+                                            CSRLOC(W1CROW W1CCOL)
+                                            RTNCSRLOC(*MOUSE &W1CROW &W1CCOL)
+                                            RTNCSRLOC(&W1CRCD &W1CFLD &W1CPOS)
+                                            HLPTITLE('Set password')
+                H                           HLPPNLGRP('PASSWORD' KEYHLP)
+                                            HLPARA(*FLD W11PWD)
+                H                           HLPPNLGRP('PASSWORD' KEYHLP)
+                                            HLPARA(*FLD W12PWD)
+                H                           HLPPNLGRP('KEYSAFEW1' KEYHLP)
+                                            HLPARA(*RCD)
+
+                  W1TITL        60A  P      ALIAS(W1_WINDOW_TITLE)
+                  W1CROW         3S 0H      ALIAS(W1_CURRENT_ROW)
+                  W1CCOL         3S 0H      ALIAS(W1_CURRENT_COLUMN)
+                  W1CRCD        10A  H      ALIAS(W1_CURRENT_RECORD)
+                  W1CFLD        10A  H      ALIAS(W1_CURRENT_FIELD)
+                  W1CPOS         4S 0H      ALIAS(W1_CURRENT_POSITION)
+
+                  W1C1PWD       10A  O  2  2MSGID(L000001 *LIBL/KEYMSGF)
+                  W1C2PWD       10A  O  4  2MSGID(L000002 *LIBL/KEYMSGF)
+                  W1CLINE       74A  O  5  2COLOR(BLU) DSPATR(UL)
+                  W1CFOOT       74A  O  6  2MSGID(F000002 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+
+                  W11PWD        60A  B  2 13COLOR(YLW) ALIAS(W1_PASSWORD)
+                                            CHECK(LC)
+                  W12PWD        60A  B  4 13COLOR(YLW) ALIAS(W1_CHECK_PASSWORD)
+                                            CHECK(LC)
+
+        50        W1MESS        74A  O  7  2COLOR(WHT) ALIAS(W1_MESSAGE)
 
