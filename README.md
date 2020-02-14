@@ -1,2 +1,5 @@
-# KEYSAFE
- Secure key/password storage on IBMi
+# **KeySafe: Secure key store**
+
+###### OSS-Project for IBMi
+
+Save your login datas tdes encrypted
