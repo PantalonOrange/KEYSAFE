@@ -33,6 +33,7 @@
                   ASLINE       127A  O 07 05ALIAS(AS_SUBFILE_LINE)
 
                   ASRECN         6  0H      ALIAS(AS_RECORD_NUMBER)
+                  ASGUID        32   H      ALIAS(AS_ENTRY_GUID)
 
       **************************************************************************
                 R KEYSAFEAC                 TEXT('Mainscreen')

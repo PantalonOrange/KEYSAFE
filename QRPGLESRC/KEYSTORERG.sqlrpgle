@@ -21,7 +21,7 @@
 
 // Created by BRC on 13.02.2020
 
-// This program stores different login datas in different catalogues encrypted by db2
+// This program stores different login data in different catalogues encrypted by db2
 //  crypto-services
 
 // CAUTION: ALPHA-VERSION
@@ -128,7 +128,9 @@ DCL-PROC loopFM_A;
        promptCommandLine();
 
      Other;
+       checkFM_A();
        fetchRecordsFM_A();
+       Iter;
 
    EndSl;
 
@@ -149,7 +151,7 @@ DCL-PROC initFM_A;
  EvalR AC_Device = %TrimR(PSDS.JobName);
  Success = setCatalogue();
  AC_Catalogue = This.CatalogueName;
- 
+
  AC_Current_Row = 7;
  AC_Current_Column = 3;
 
@@ -162,6 +164,7 @@ DCL-PROC fetchRecordsFM_A;
  DCL-S Success IND INZ(TRUE);
 
  DCL-DS ResultDS QUALIFIED INZ;
+   Link CHAR(32);
    Description_Short CHAR(30);
    Remarks CHAR(80);
  END-DS;
@@ -188,7 +191,8 @@ DCL-PROC fetchRecordsFM_A;
  WSDS.SubfileMore = TRUE;
 
  Exec SQL DECLARE C_MAIN_LOOP SCROLL CURSOR FOR
-           SELECT DESCRIPTION_SHORT, LEFT(REMARKS, 80) FROM KEYSAFE.MAIN_LOOP
+           SELECT LINK, DESCRIPTION_SHORT, LEFT(REMARKS, 80)
+             FROM KEYSAFE.MAIN_LOOP
             WHERE MAIN_INDEX = :This.CatalogueGUID
             ORDER BY DESCRIPTION_SHORT;
  Exec SQL OPEN C_MAIN_LOOP;
@@ -199,7 +203,7 @@ DCL-PROC fetchRecordsFM_A;
    If ( SQLCode = 100 );
      Exec SQL CLOSE C_MAIN_LOOP;
      Leave;
-     
+
    ElseIf ( SQLCode <> 100 ) And ( SQLCode <> 0 );
      Exec SQL GET DIAGNOSTICS CONDITION 1 :AS_Subfile_Line = MESSAGE_TEXT;
      Exec SQL CLOSE C_MAIN_LOOP;
@@ -219,6 +223,7 @@ DCL-PROC fetchRecordsFM_A;
    RecordNumber += 1;
    AS_Subfile_Line = SubfileDS;
    AS_Record_Number = RecordNumber;
+   AS_Entry_GUID = ResultDS.Link;
    WSDS.ShowSubfileOption = TRUE;
    Write KEYSAFEAS;
 
@@ -245,6 +250,36 @@ DCL-PROC fetchRecordsFM_A;
  Else;
    RecordNumber = 1;
  EndIf;
+
+END-PROC;
+//**************************************************************************
+DCL-PROC checkFM_A;
+
+ DoW ( This.Loop );
+
+   ReadC KEYSAFEAS;
+   If %EoF;
+     Leave;
+   EndIf;
+   
+   Select;
+     When ( AS_Option = '' );
+       Iter;
+
+     When ( AS_Option = '2' );
+       //editCatalogueEntry();
+
+     When ( AS_Option = '4' );
+       //deleteCatalogueEntry();
+
+     When ( AS_Option = '5' );
+       //viewCatalogueEntry();
+
+     Other;
+       Iter;
+   EndSl;
+
+ EndDo;
 
 END-PROC;
 
@@ -320,7 +355,7 @@ DCL-PROC setCatalogue;
 
          Exec SQL SELECT IFNULL(CATALOGUE_NAME, ''), IFNULL(GUID, ''),
                          CASE WHEN DECRYPT_CHAR(KEYTEST) = '1' THEN '1'
-                              ELSE '0' END 
+                              ELSE '0' END
                     INTO :This.CatalogueName, :This.CatalogueGUID, :Success
                     FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue;
@@ -339,10 +374,10 @@ DCL-PROC setCatalogue;
            W0_Message = retrieveMessageText('E000001');
            WSDS.WindowShowMessage = TRUE;
            Iter;
-           
+
          ElseIf Success;
            Leave;
-           
+
          EndIf;
 
      EndSl;
