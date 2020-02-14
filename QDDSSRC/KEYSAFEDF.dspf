@@ -23,7 +23,8 @@
                                             MSGLOC(27) ERRSFL
 
       **************************************************************************
-                R KEYSAFEAS                 SFL
+                R KEYSAFEAS                 TEXT('Subfile')
+                                            SFL
 
                   ASOPTI         1A  B 07 03COLOR(TRQ) CHECK(ER)
        N40                                  DSPATR(PR ND)
@@ -34,7 +35,8 @@
                   ASRECN         6  0H      ALIAS(AS_RECORD_NUMBER)
 
       **************************************************************************
-                R KEYSAFEAC                 OVERLAY INVITE
+                R KEYSAFEAC                 TEXT('Mainscreen')
+                                            OVERLAY INVITE
                                             CA03(03) CA05(05)
                                             CA06(06) CA09(09)
                                             SFLCTL(KEYSAFEAS)
@@ -85,19 +87,22 @@
 
 
       **************************************************************************
-                R KEYSAFEAF                 OVERLAY
+                R KEYSAFEAF                 TEXT('Footer for mainscreen')
+                                            OVERLAY
                   AFLINE1      130A  O 25  2DSPATR(UL) COLOR(BLU)
                   AFLINE2      130A  O 26  2MSGID(F000000 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
       **************************************************************************
-                R KEYSAFEZS                 SFL
+                R KEYSAFEZS                 TEXT('Messagesubfile')
+                                            SFL
                                             SFLMSGRCD(24)
                   MESSAGEKEY                SFLMSGKEY
                   PGMQUEUE                  SFLPGMQ(10)
 
       **************************************************************************
-                R KEYSAVEZC                 SFLCTL(KEYSAFEZS)
+                R KEYSAVEZC                 TEXT('Messagecontrol')
+                                            SFLCTL(KEYSAFEZS)
                                             CF01
                                             KEEP
                                             OVERLAY
@@ -111,7 +116,8 @@
                   PGMQUEUE                  SFLPGMQ(10)
 
       **************************************************************************
-                R KEYSAFEW0                 OVERLAY
+                R KEYSAFEW0                 TEXT('Window - Login')
+                                            OVERLAY
                                             WINDOW(9 27 07 76 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR BLU))
@@ -150,12 +156,13 @@
         50        W0MESS        74A  O  7  2COLOR(WHT) ALIAS(W0_MESSAGE)
 
       **************************************************************************
-                R KEYSAFEW1                 OVERLAY
+                R KEYSAFEW1                 TEXT('Window - Set masterpassword')
+                                            OVERLAY
                                             WINDOW(9 27 07 76 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
-                                                      (*DSPATR RI) (*COLOR YLW))
+                                                      (*DSPATR RI) (*COLOR GRN))
                                             WDWTITLE((*TEXT &W1TITL) +
-                                                      (*DSPATR RI) (*COLOR WHT))
+                                                      (*DSPATR RI) (*COLOR RED))
                                             CA03(03) CA12(12)
                                             CSRLOC(W1CROW W1CCOL)
                                             RTNCSRLOC(*MOUSE &W1CROW &W1CCOL)
@@ -187,4 +194,65 @@
                                             CHECK(LC)
 
         50        W1MESS        74A  O  7  2COLOR(WHT) ALIAS(W1_MESSAGE)
+
+      **************************************************************************
+                R KEYSAFEW2                 TEXT('Window - Prompt catalogues')
+                                            OVERLAY
+                                            WINDOW(9 27 07 76 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR GRN))
+                                            WDWTITLE((*TEXT &W2TITL) +
+                                                      (*DSPATR RI) (*COLOR WHT))
+                                            CA03(03) CA05(05) CA12(12)
+                                            CSRLOC(W2CROW W2CCOL)
+                                            RTNCSRLOC(*MOUSE &W2CROW &W2CCOL)
+                                            RTNCSRLOC(&W2CRCD &W2CFLD &W2CPOS)
+
+                  W2TITL        60A  P      ALIAS(W2_WINDOW_TITLE)
+                  W2CROW         3S 0H      ALIAS(W2_CURRENT_ROW)
+                  W2CCOL         3S 0H      ALIAS(W2_CURRENT_COLUMN)
+                  W2CRCD        10A  H      ALIAS(W2_CURRENT_RECORD)
+                  W2CFLD        10A  H      ALIAS(W2_CURRENT_FIELD)
+                  W2CPOS         4S 0H      ALIAS(W2_CURRENT_POSITION)
+
+        50        W2MESS        74A  O  7  2COLOR(WHT) ALIAS(W2_MESSAGE)
+
+      **************************************************************************
+                R KEYSAFEW3                 TEXT('Window - Create catalogue')
+                                            OVERLAY
+                                            WINDOW(9 27 07 76 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR GRN))
+                                            WDWTITLE((*TEXT &W3TITL) +
+                                                      (*DSPATR RI) (*COLOR WHT))
+                                            CA03(03) CA12(12)
+                                            CSRLOC(W3CROW W3CCOL)
+                                            RTNCSRLOC(*MOUSE &W3CROW &W3CCOL)
+                                            RTNCSRLOC(&W3CRCD &W3CFLD &W3CPOS)
+
+                  W3TITL        60A  P      ALIAS(W3_WINDOW_TITLE)
+                  W3CROW         3S 0H      ALIAS(W3_CURRENT_ROW)
+                  W3CCOL         3S 0H      ALIAS(W3_CURRENT_COLUMN)
+                  W3CRCD        10A  H      ALIAS(W3_CURRENT_RECORD)
+                  W3CFLD        10A  H      ALIAS(W3_CURRENT_FIELD)
+                  W3CPOS         4S 0H      ALIAS(W3_CURRENT_POSITION)
+
+        50        W3MESS        74A  O  7  2COLOR(WHT) ALIAS(W3_MESSAGE)
+
+      **************************************************************************
+                R KEYSAFEW4                 TEXT('Window - Confirm delete')
+                                            OVERLAY
+                                            WINDOW(&W4WROW &W4WCOL -
+                                                   05 30 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR RED))
+                                            CA12(12)
+
+                  W4WROW         2S 0P      ALIAS(W4_WINDOW_ROW)
+                  W4WCOL         3S 0P      ALIAS(W4_WINDOW_COLUMN)
+
+                  W4MI00        28A  O 02 02 MSGID(C000004 *LIBL/KEYMSGF)
+                  W4MI01        28A  O 03 02 MSGID(C000005 *LIBL/KEYMSGF)
+                                             DSPATR(UL)
+                  W4MI02        28A  O 04 02 MSGID(F000003 *LIBL/KEYMSGF)
 

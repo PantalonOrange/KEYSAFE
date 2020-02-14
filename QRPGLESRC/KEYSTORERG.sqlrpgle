@@ -134,7 +134,6 @@ DCL-PROC loopFM_A;
 
  EndDo;
 
-
 END-PROC;
 //**************************************************************************
 DCL-PROC initFM_A;
@@ -223,12 +222,6 @@ DCL-PROC fetchRecordsFM_A;
    WSDS.ShowSubfileOption = TRUE;
    Write KEYSAFEAS;
 
-   If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= RecordNumber );
-     RecordNumber = AC_Current_Cursor;
-   Else;
-     RecordNumber = 1;
-   EndIf;
-
  EndDo;
 
  If ( RecordNumber = 0 ) And ( This.GlobalMessage = '' );
@@ -247,6 +240,12 @@ DCL-PROC fetchRecordsFM_A;
 
  EndIf;
 
+ If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= RecordNumber );
+   RecordNumber = AC_Current_Cursor;
+ Else;
+   RecordNumber = 1;
+ EndIf;
+
 END-PROC;
 
 
@@ -258,8 +257,11 @@ DCL-PROC setCatalogue;
  //-------------------------------------------------------------------------
 
  WSDS.WindowShowMessage = FALSE;
+ W0_Current_Row = 4;
+ W0_Current_Column = 13;
+
  W0_Window_Title = retrieveMessageText('W000000');
- Clear W0_Catalogue;
+ W0_Catalogue = '*';
  Clear W0_Password;
 
  DoW ( This.Loop );
@@ -313,6 +315,7 @@ DCL-PROC setCatalogue;
            EndIf;
          Else;
            Exec SQL SET ENCRYPTION PASSWORD = :W0_Password;
+           Clear W0_Password;
          EndIf;
 
          Exec SQL SELECT IFNULL(CATALOGUE_NAME, ''), IFNULL(GUID, ''),
@@ -322,13 +325,17 @@ DCL-PROC setCatalogue;
                     FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue;
          Success = Success And ( SQLCode = 0 );
-         
+
          If Not Success And ( SQLCode <> 0 );
+           W0_Current_Row = 2;
+           W0_Current_Column = 13;
            Exec SQL GET DIAGNOSTICS CONDITION 1 :W0_Message = MESSAGE_TEXT;
            WSDS.WindowShowMessage = TRUE;
            Iter;
-           
+
          ElseIf Not Success And ( SQLCode = 0 );
+           W0_Current_Row = 4;
+           W0_Current_Column = 13;
            W0_Message = retrieveMessageText('E000001');
            WSDS.WindowShowMessage = TRUE;
            Iter;
@@ -359,6 +366,7 @@ DCL-PROC setCataloguePassword;
  //-------------------------------------------------------------------------
 
  WSDS.WindowShowMessage = FALSE;
+
  W1_Window_Title = retrieveMessageText('W000001');
  Clear W1_Password;
  Clear W1_Check_Password;
@@ -403,6 +411,8 @@ DCL-PROC setCataloguePassword;
 
        Other;
          Exec SQL SET ENCRYPTION PASSWORD = :W1_Password;
+         Clear W1_Password;
+         Clear W1_Check_Password;
          Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT_TDES('1')
                      WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL;
          Success = Success And ( SQLCode = 0 );
