@@ -38,8 +38,10 @@
       **************************************************************************
                 R KEYSAFEAC                 TEXT('Mainscreen')
                                             OVERLAY INVITE
-                                            CA03(03) CA05(05)
-                                            CA06(06) CA09(09)
+                                            CA03(03) CA05(05) CA06(06)
+                                            CA09(09) CA11(11)
+                                            MOUBTN(*UMD ROLLDOWN)
+                                            MOUBTN(*UMP ROLLUP)
                                             SFLCTL(KEYSAFEAS)
                                             SFLPAG(17) SFLSIZ(18)
         30                                  SFLCLR
@@ -49,13 +51,13 @@
                                             CSRLOC(ACCROW ACCCOL)
                                             RTNCSRLOC(*MOUSE &ACCROW &ACCCOL)
                                             RTNCSRLOC(&ACCRCD &ACCFLD &ACCPOS)
-                                            SFLCSRRRN(&CURCUR)
+                                            SFLCSRRRN(&ACCURC)
                                             HLPCLR
                                             HLPTITLE('Secure key store')
                 H                           HLPPNLGRP('KEYSAFEAC' KEYHLP)
                                             HLPARA(1 2 27 132)
 
-                  CURCUR         5S 0H      ALIAS(AC_CURRENT_CURSOR)
+                  ACCURC         5S 0H      ALIAS(AC_CURRENT_CURSOR)
                   ACCROW         3S 0H      ALIAS(AC_CURRENT_ROW)
                   ACCCOL         3S 0H      ALIAS(AC_CURRENT_COLUMN)
                   ACCRCD        10A  H      ALIAS(AC_CURRENT_RECORD)
@@ -197,26 +199,46 @@
         50        W1MESS        74A  O  7  2COLOR(WHT) ALIAS(W1_MESSAGE)
 
       **************************************************************************
-                R KEYSAFEW2                 TEXT('Window - Prompt catalogues')
+                R KEYSAFEW2S                TEXT('Window - Prompt catalogue')
+                                            SFL
+
+                  W2SOPTI        1A  B  2  2VALUES(' ' '1')
+                                            ALIAS(W2S_OPTION)
+                                            DSPATR(UL) COLOR(TRQ) CHECK(ER)
+                  W2SLINE       30A  O  2  4ALIAS(W2S_SUBFILE_LINE)
+                  W2SRECN        4  0H      ALIAS(W2S_RECORDNUMBER)
+                  W2SNAME       32A  H      ALIAS(W2S_CATALOGUE_NAME)
+
+      **************************************************************************
+                R KEYSAFEW2C                TEXT('Window - Prompt catalogues')
+                                            SFLCTL(KEYSAFEW2S)
+                                            SFLPAG(5) SFLSIZ(6)
                                             OVERLAY
-                                            WINDOW(9 27 07 76 *NOMSGLIN)
+                                            WINDOW(9 27 8 36 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR GRN))
-                                            WDWTITLE((*TEXT &W2TITL) +
+                                            WDWTITLE((*TEXT &W2CTITL) +
                                                       (*DSPATR RI) (*COLOR WHT))
                                             CA03(03) CA05(05) CA12(12)
-                                            CSRLOC(W2CROW W2CCOL)
-                                            RTNCSRLOC(*MOUSE &W2CROW &W2CCOL)
-                                            RTNCSRLOC(&W2CRCD &W2CFLD &W2CPOS)
+                                            MOUBTN(*UMD ROLLDOWN)
+                                            MOUBTN(*UMP ROLLUP)
+                                            CSRLOC(W2CCROW W2CCCOL)
+                                            RTNCSRLOC(*MOUSE &W2CCROW &W2CCCOL)
+                                            RTNCSRLOC(&W2CCRCD &W2CCFLD -
+                                                      &W2CCPOS)
+                                            SFLCSRRRN(&W2CCURC)
+        30                                  SFLCLR
+        31                                  SFLDSPCTL
+        32                                  SFLDSP
+        33                                  SFLEND(*MORE)
 
-                  W2TITL        60A  P      ALIAS(W2_WINDOW_TITLE)
-                  W2CROW         3S 0H      ALIAS(W2_CURRENT_ROW)
-                  W2CCOL         3S 0H      ALIAS(W2_CURRENT_COLUMN)
-                  W2CRCD        10A  H      ALIAS(W2_CURRENT_RECORD)
-                  W2CFLD        10A  H      ALIAS(W2_CURRENT_FIELD)
-                  W2CPOS         4S 0H      ALIAS(W2_CURRENT_POSITION)
-
-        50        W2MESS        74A  O  7  2COLOR(WHT) ALIAS(W2_MESSAGE)
+                  W2CCURC        5S 0H      ALIAS(W2C_CURRENT_CURSOR)
+                  W2CTITL       30A  P      ALIAS(W2C_WINDOW_TITLE)
+                  W2CCROW        3S 0H      ALIAS(W2C_CURRENT_ROW)
+                  W2CCCOL        3S 0H      ALIAS(W2C_CURRENT_COLUMN)
+                  W2CCRCD       10A  H      ALIAS(W2C_CURRENT_RECORD)
+                  W2CCFLD       10A  H      ALIAS(W2C_CURRENT_FIELD)
+                  W2CCPOS        4S 0H      ALIAS(W2C_CURRENT_POSITION)
 
       **************************************************************************
                 R KEYSAFEW3                 TEXT('Window - Create catalogue')

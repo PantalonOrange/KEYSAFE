@@ -31,14 +31,16 @@
 //  + Add, edit, delete or view catalogue entries
 //     - With option hind or show passwordfield
 //  + For the future maybe change masterpassword for a catalogue?
+//  + Clean up source
 
 
 /INCLUDE QRPGLECPY,H_SPECS
 CTL-OPT MAIN(Main);
 
 
-DCL-F KEYSAFEDF WORKSTN INDDS(WSDS) EXTFILE('KEYSAFEDF') ALIAS
-                 SFILE(KEYSAFEAS :RecordNumber) USROPN;
+DCL-F KEYSAFEDF WORKSTN INDDS(WSDS) EXTFILE('KEYSAFEDF') ALIAS USROPN
+                 SFILE(KEYSAFEAS :AC_RecordNumber)
+                 SFILE(KEYSAFEW2S :W2C_RecordNumber);
 
 
 DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
@@ -125,11 +127,14 @@ DCL-PROC loopFM_A;
      When WSDS.Refresh;
        fetchRecordsFM_A();
 
-     When WSDS.NewRecord;
+     When WSDS.NewEntry;
        //createNewCatalogueEntry();
 
      When WSDS.CommandLine;
        promptCommandLine();
+     
+     When WSDS.Switch;
+       //switchCatalogue();
 
      Other;
        checkFM_A();
@@ -148,7 +153,7 @@ DCL-PROC initFM_A;
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
- Reset RecordNumber;
+ Reset AC_RecordNumber;
  Clear KEYSAFEAC;
  Clear KEYSAFEAS;
 
@@ -181,7 +186,7 @@ DCL-PROC fetchRecordsFM_A;
  END-DS;
  //-------------------------------------------------------------------------
 
- Reset RecordNumber;
+ Reset AC_RecordNumber;
 
  WSDS.SubfileClear = TRUE;
  WSDS.SubfileDisplayControl = TRUE;
@@ -204,15 +209,15 @@ DCL-PROC fetchRecordsFM_A;
  DoW ( This.Loop );
 
    Exec SQL FETCH NEXT FROM C_MAIN_LOOP INTO :ResultDS;
-   If ( SQLCode = 100 );
+   If ( SQLCode = 100 ) Or ( AC_RecordNumber = 9999 );
      Exec SQL CLOSE C_MAIN_LOOP;
      Leave;
 
    ElseIf ( SQLCode <> 100 ) And ( SQLCode <> 0 );
      Exec SQL GET DIAGNOSTICS CONDITION 1 :AS_Subfile_Line = MESSAGE_TEXT;
      Exec SQL CLOSE C_MAIN_LOOP;
-     RecordNumber += 1;
-     AS_Record_Number = RecordNumber;
+     AC_RecordNumber += 1;
+     AS_Record_Number = AC_RecordNumber;
      WSDS.ShowSubfileOption = FALSE;
      Write KEYSAFEAS;
      Leave;
@@ -224,35 +229,35 @@ DCL-PROC fetchRecordsFM_A;
    SubfileDS.Color2 = COLOR_GRN;
    SubfileDS.Remarks = ResultDS.Remarks;
 
-   RecordNumber += 1;
+   AC_RecordNumber += 1;
    AS_Subfile_Line = SubfileDS;
-   AS_Record_Number = RecordNumber;
+   AS_Record_Number = AC_RecordNumber;
    AS_Entry_GUID = ResultDS.Link;
    WSDS.ShowSubfileOption = TRUE;
    Write KEYSAFEAS;
 
  EndDo;
 
- If ( RecordNumber = 0 ) And ( This.GlobalMessage = '' );
-   RecordNumber = 1;
+ If ( AC_RecordNumber = 0 ) And ( This.GlobalMessage = '' );
+   AC_RecordNumber = 1;
    AS_Subfile_Line = COLOR_GRN + retrieveMessageText('M000000');
-   AS_Record_Number = RecordNumber;
+   AS_Record_Number = AC_RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
- ElseIf ( RecordNumber = 0 ) And ( This.GlobalMessage <> '' );
-   RecordNumber = 1;
+ ElseIf ( AC_RecordNumber = 0 ) And ( This.GlobalMessage <> '' );
+   AC_RecordNumber = 1;
    AS_Subfile_Line = COLOR_WHT + This.GlobalMessage;
-   AS_Record_Number = RecordNumber;
+   AS_Record_Number = AC_RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
  EndIf;
 
- If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= RecordNumber );
-   RecordNumber = AC_Current_Cursor;
+ If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= AC_RecordNumber );
+   AC_RecordNumber = AC_Current_Cursor;
  Else;
-   RecordNumber = 1;
+   AC_RecordNumber = 1;
  EndIf;
 
 END-PROC;
@@ -267,6 +272,7 @@ DCL-PROC checkFM_A;
    EndIf;
 
    Select;
+
      When ( AS_Option = '' );
        Iter;
 
@@ -280,7 +286,9 @@ DCL-PROC checkFM_A;
        //viewCatalogueEntry();
 
      Other;
+       sendMessageToDisplay('M000001' :AS_Option :PgmQueue :CallStack);
        Iter;
+
    EndSl;
 
  EndDo;
@@ -317,7 +325,19 @@ DCL-PROC setCatalogue;
      Success = FALSE;
      Leave;
 
-   ElseIf WSDS.NewRecord;
+   ElseIf WSDS.SearchEntry;
+     If ( W0_Current_Field = 'W0CATA' );
+       W0_Catalogue = searchCatalogue();
+       If ( W0_Catalogue <> '' );
+         W0_Current_Row = 4;
+         W0_Current_Column = 13;
+       EndIf;
+     Else;
+       sendMessageToDisplay('M000002' :'' :PgmQueue :CallStack);
+     EndIf;
+     Iter;
+
+   ElseIf WSDS.NewEntry;
      //createNewCatalogue();
 
    ElseIf WSDS.Cancel;
@@ -478,6 +498,166 @@ DCL-PROC setCataloguePassword;
  EndDo;
 
  Return Success;
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC searchCatalogue;
+ DCL-PI *N CHAR(30) END-PI;
+
+ DCL-S Catalogue_Name CHAR(32) INZ;
+ //-------------------------------------------------------------------------
+
+ Clear KEYSAFEW2C;
+ Clear KEYSAFEW2S;
+ 
+ W2C_Window_Title = retrieveMessageText('W000002');
+
+ DoW ( This.Loop );
+
+   Reset W2C_RecordNumber;
+
+   WSDS.SubfileClear = TRUE;
+   WSDS.SubfileDisplayControl = TRUE;
+   WSDS.SubfileDisplay = FALSE;
+   WSDS.SubfileMore = FALSE;
+   Write(E) KEYSAFEW2C;
+
+   WSDS.SubfileClear = FALSE;
+   WSDS.SubfileDisplayControl = TRUE;
+   WSDS.SubfileDisplay = TRUE;
+   WSDS.SubfileMore = TRUE;
+   
+   Exec SQL DECLARE C_CATALOGUE_SEARCH SCROLL CURSOR FOR  
+             SELECT DESCRIPTION, CATALOGUE_NAME FROM KEYSAFE.CATALOGUES
+              ORDER BY CATALOGUE_NAME;
+   Exec SQL OPEN C_CATALOGUE_SEARCH;
+   
+   DoW ( This.Loop );
+     Exec SQL FETCH NEXT FROM C_CATALOGUE_SEARCH INTO :W2S_Subfile_Line, :W2S_Catalogue_Name;
+     If ( SQLCode = 100 ) Or ( W2C_RecordNumber = 9999 );
+       Exec SQL CLOSE C_CATALOGUE_SEARCH;
+       Leave;
+     EndIf;
+     
+     W2C_RecordNumber += 1;
+     W2S_RecordNumber = W2C_RecordNumber;
+     Write KEYSAFEW2S;
+     
+   EndDo;
+   
+   If ( W2C_RecordNumber = 0 );
+     Clear W2S_Catalogue_Name;
+     Leave;
+   Else;
+     W2C_RecordNumber = 1;
+   EndIf;
+
+   Write KEYSAFEW2C;
+   ExFmt KEYSAFEW2C;
+
+   ReadC KEYSAFEW2S;
+   
+   If Not %EoF();
+     
+    If ( W2S_Option = '' );
+      Iter;
+   
+     ElseIf ( W2S_Option = '1' );
+       Catalogue_Name = W2S_Catalogue_Name;
+       Leave;
+       
+     EndIf;
+     
+   EndIf;
+
+   If WSDS.Exit Or WSDS.Cancel;
+     Leave;
+   
+   ElseIf WSDS.Refresh;
+     Iter;
+   
+   Else;
+     Iter;
+   
+   EndIf;
+
+ EndDo;
+
+ Return Catalogue_Name;
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC createNewCatalogue;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC createNewCatalogueEntry;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC editCatalogueEntry;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC deleteCatalogueEntry;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC viewCatalogueEntry;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC sendMessageToDisplay;
+ DCL-PI *N;
+   pMessageID CHAR(7) CONST;
+   pMessage CHAR(256) CONST;
+   pProgramQueue CHAR(10) CONST;
+   pCallStack INT(10) CONST;
+ END-PI;
+
+ DCL-DS MessageDS LIKEDS(MessageHandling_T) INZ;
+ //-------------------------------------------------------------------------
+
+ MessageDS.Length = %Len(%TrimR(pMessage));
+ If ( MessageDS.Length >= 0 );
+   sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length
+                      :'*INFO' :pProgramQueue :pCallStack 
+                      :MessageDS.Key :MessageDS.Error);
+ EndIf;
 
 END-PROC;
 

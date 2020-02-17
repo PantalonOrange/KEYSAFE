@@ -28,7 +28,8 @@
 DCL-C FM_A 'A';
 DCL-C FM_END '*';
 
-DCL-S RecordNumber UNS(10) INZ;
+DCL-S AC_RecordNumber UNS(10) INZ;
+DCL-S W2C_RecordNumber UNS(10) INZ;
 DCL-S PgmQueue CHAR(10) INZ('MAIN');
 DCL-S CallStack INT(10) INZ;
 
@@ -49,9 +50,11 @@ END-DS;
 
 DCL-DS WSDS QUALIFIED;
   Exit IND POS(3);
+  SearchEntry IND POS(4);
   Refresh IND POS(5);
-  NewRecord IND POS(6);
+  NewEntry IND POS(6);
   CommandLine IND POS(9);
+  Switch IND POS(11);
   Cancel IND POS(12);
   SubfileClear IND POS(30);
   SubfileDisplayControl IND POS(31);
