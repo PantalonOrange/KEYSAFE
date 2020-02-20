@@ -25,12 +25,5 @@
 
 /DEFINE SQLOPTIONS
 
-/IF DEFINED (SQL_WITH_COMMIT)
 Exec SQL SET OPTION DATFMT = *ISO, DATSEP = '-', TIMFMT = *ISO, TIMSEP = '.',
-                    CLOSQLCSR = *ENDMOD, USRPRF = *OWNER, DYNUSRPRF = *OWNER,
-                    COMMIT = *CS;
-/ELSE
-Exec SQL SET OPTION DATFMT = *ISO, DATSEP = '-', TIMFMT = *ISO, TIMSEP = '.',
-                    CLOSQLCSR = *ENDMOD, USRPRF = *OWNER, DYNUSRPRF = *OWNER,
-                    COMMIT = *NONE;
-/ENDIF
+                    CLOSQLCSR = *ENDMOD, USRPRF = *OWNER, DYNUSRPRF = *OWNER;

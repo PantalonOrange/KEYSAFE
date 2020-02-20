@@ -296,3 +296,20 @@
                                              DSPATR(UL)
                   W4MI02        28A  O 04 02 MSGID(F000003 *LIBL/KEYMSGF)
 
+      **************************************************************************
+                R KEYSAFEW5                 TEXT('Window - Confirm changes')
+                                            OVERLAY
+                                            WINDOW(&W5WROW &W5WCOL -
+                                                   05 30 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR YLW))
+                                            CA03(03) CA12(12)
+
+                  W5WROW         2S 0P      ALIAS(W5_WINDOW_ROW)
+                  W5WCOL         3S 0P      ALIAS(W5_WINDOW_COLUMN)
+
+                  W5MI00        28A  O 02 02 MSGID(C000006 *LIBL/KEYMSGF)
+                  W5MI01        28A  O 03 02 MSGID(C000007 *LIBL/KEYMSGF)
+                                             DSPATR(UL)
+                  W5MI02        28A  O 04 02 MSGID(F000004 *LIBL/KEYMSGF)
+

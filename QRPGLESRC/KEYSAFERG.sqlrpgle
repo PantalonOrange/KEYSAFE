@@ -59,11 +59,12 @@ DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
 //#########################################################################
 DCL-PROC Main;
 
- /DEFINE SQL_WITH_COMMIT
  /INCLUDE KEYSAFE/QRPGLECPY,SQLOPTIONS
 
  Reset This;
  *INLR = TRUE;
+
+ system('STRCMTCTL LCKLVL(*CS) CMTSCOPE(*ACTGRP)');
 
  If Not %Open(KEYSAFEDF);
    Open KEYSAFEDF;
@@ -79,6 +80,7 @@ DCL-PROC Main;
          On-Error;
            This.PictureControl = FM_END;
            sendJobLog(PSDS.MessageID + ':' + PSDS.MessageData);
+           Exec SQL ROLLBACK;
        EndMon;
 
      Other;
@@ -91,6 +93,9 @@ DCL-PROC Main;
  Return;
 
 On-Exit;
+
+ system('ENDCMTCTL');
+
  If %Open(KEYSAFEDF);
    Close KEYSAFEDF;
  EndIf;
@@ -105,6 +110,8 @@ DCL-PROC loopFM_A;
 
  DCL-DS FMA LIKEREC(KEYSAFEAC :*ALL) INZ;
  //-------------------------------------------------------------------------
+
+ Exec SQL SAVEPOINT FM_A ON ROLLBACK RETAIN CURSORS;
 
  initFM_A();
 
@@ -122,7 +129,12 @@ DCL-PROC loopFM_A;
    Select;
 
      When WSDS.Exit;
-       This.PictureControl = FM_END;
+       If checkForOpenCommits();
+         This.PictureControl = FM_END;
+       Else;
+         initFM_A();
+         Iter;
+       EndIf;
 
      When WSDS.Refresh;
        initFM_A();
@@ -154,6 +166,8 @@ DCL-PROC loopFM_A;
    EndSl;
 
  EndDo;
+
+ Exec SQL RELEASE SAVEPOINT FM_A;
 
 END-PROC;
 //**************************************************************************
@@ -741,6 +755,41 @@ DCL-PROC viewCatalogueEntry;
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC checkForOpenCommits;
+ DCL-PI *N IND END-PI;
+
+ DCL-S ReturnParm IND INZ(TRUE);
+ DCL-S ActiveTransactions INT(10) INZ;
+ //-------------------------------------------------------------------------
+
+ Exec SQL GET DIAGNOSTICS :ActiveTransactions = TRANSACTION_ACTIVE;
+ 
+ If ( SQLCode = 0 ) And ( ActiveTransactions > 0 );
+
+   Write KEYSAFEW5;
+   ExFmt KEYSAFEW5;
+   
+   If ( WSDS.Exit );
+     Exec SQL ROLLBACK;
+     ReturnParm = TRUE;
+   
+   ElseIf ( WSDS.Cancel );
+     ReturnParm = FALSE;
+   
+   Else;
+     Exec SQL COMMIT;
+     ReturnParm = TRUE;
+   
+   EndIf;
+   
+ EndIf;
+ 
+ Return ReturnParm;
 
 END-PROC;
 
