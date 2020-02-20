@@ -113,15 +113,20 @@ DCL-PROC loopFM_A;
 
  Exec SQL SAVEPOINT FM_A ON ROLLBACK RETAIN CURSORS;
 
+ Clear KEYSAFEAC;
+ Clear KEYSAFEAS;
  initFM_A();
+
+ AC_Current_Row = 7;
+ AC_Current_Column = 3;
 
  DoW ( This.PictureControl = FM_A );
 
    fetchRecordsFM_A();
 
-   Write KEYSAFEAF;
    Write KEYSAFEAC;
    Write KEYSAFEAF;
+   Write KEYSAFEZC;
    ExFmt KEYSAFEAC;
 
    clearMessages(PgmQueue :CallStack);
@@ -133,7 +138,6 @@ DCL-PROC loopFM_A;
          This.PictureControl = FM_END;
        Else;
          initFM_A();
-         Iter;
        EndIf;
 
      When WSDS.Refresh;
@@ -144,24 +148,25 @@ DCL-PROC loopFM_A;
 
      When WSDS.CommandLine;
        promptCommandLine();
+       initFM_A();
 
      When WSDS.Switch;
-       //switchCatalogue();
+       switchCatalogue();
+       initFM_A();
 
      When WSDS.JumpTop;
        initFM_A();
        AC_Current_Cursor = 1;
-       sendMessageToDisplay('S000000' :AS_Option :PgmQueue :CallStack);
+       sendMessageToDisplay('S000001' :AS_Option :PgmQueue :CallStack);
 
      When WSDS.JumpBottom;
        initFM_A();
        AC_Current_Cursor = MAX_RECORDS;
-       sendMessageToDisplay('S000001' :AS_Option :PgmQueue :CallStack);
+       sendMessageToDisplay('S000002' :AS_Option :PgmQueue :CallStack);
 
      Other;
        checkFM_A();
        initFM_A();
-       Iter;
 
    EndSl;
 
@@ -178,24 +183,24 @@ DCL-PROC initFM_A;
  //-------------------------------------------------------------------------
 
  Reset AC_RecordNumber;
- Clear KEYSAFEAC;
- Clear KEYSAFEAS;
-
- EvalR AC_Device = %TrimR(PSDS.JobName);
 
  If ( This.CatalogueName = '' );
-   Success = setCatalogue();
-   AC_Catalogue = This.CatalogueName;
+   If Not setCatalogue();
+     This.PictureControl = FM_END;
+     Success = FALSE;
+   EndIf;
  EndIf;
 
- WSDS.SubfileClear = TRUE;
- WSDS.SubfileDisplayControl = TRUE;
- WSDS.SubfileDisplay = FALSE;
- WSDS.SubfileMore = FALSE;
- Write(E) KEYSAFEAC;
+ EvalR AC_Device = %TrimR(PSDS.JobName);
+ AC_Catalogue = This.CatalogueName;
 
- AC_Current_Row = 7;
- AC_Current_Column = 3;
+ If Success;
+   WSDS.SubfileClear = TRUE;
+   WSDS.SubfileDisplayControl = TRUE;
+   WSDS.SubfileDisplay = FALSE;
+   WSDS.SubfileMore = FALSE;
+   Write(E) KEYSAFEAC;
+ EndIf;
 
  Return Success;
 
@@ -204,6 +209,8 @@ END-PROC;
 DCL-PROC fetchRecordsFM_A;
 
  DCL-S Success IND INZ(TRUE);
+ DCL-S SearchDescriptionShort CHAR(60) INZ;
+ DCL-S SearchRemarks CHAR(128) INZ;
 
  DCL-DS ResultDS QUALIFIED INZ;
    Link CHAR(32);
@@ -226,11 +233,18 @@ DCL-PROC fetchRecordsFM_A;
  WSDS.SubfileDisplayControl = TRUE;
  WSDS.SubfileDisplay = TRUE;
  WSDS.SubfileMore = TRUE;
+ 
+ sendStatus('S000000' :'');
+ 
+ SearchDescriptionShort = '%' + %TrimR(AC_Entry_Find) + '%';
+ SearchRemarks = '%' + %TrimR(AC_Remark_Find) + '%';
 
  Exec SQL DECLARE C_MAIN_LOOP SCROLL CURSOR FOR
            SELECT LINK, DESCRIPTION_SHORT, LEFT(REMARKS, 80)
              FROM KEYSAFE.MAIN_LOOP
             WHERE MAIN_INDEX = :This.CatalogueGUID
+              AND UPPER(DESCRIPTION_SHORT) LIKE RTRIM(UPPER(:SearchDescriptionShort))
+              AND UPPER(REMARKS) LIKE RTRIM(UPPER(:SearchRemarks))
             ORDER BY DESCRIPTION_SHORT;
  Exec SQL OPEN C_MAIN_LOOP;
 
@@ -337,11 +351,11 @@ DCL-PROC setCatalogue;
  //-------------------------------------------------------------------------
 
  WSDS.WindowShowMessage = FALSE;
- W0_Current_Row = 4;
+ W0_Current_Row = 2;
  W0_Current_Column = 13;
 
  W0_Window_Title = retrieveMessageText('W000000');
- W0_Catalogue = '*';
+ W0_Catalogue = This.CatalogueName;
  Clear W0_Password;
 
  DoW ( This.Loop );
@@ -354,7 +368,6 @@ DCL-PROC setCatalogue;
 
    If WSDS.Exit;
      Clear KEYSAFEW0;
-     This.PictureControl = FM_END;
      Success = FALSE;
      Leave;
 
@@ -377,7 +390,7 @@ DCL-PROC setCatalogue;
 
    ElseIf WSDS.Cancel;
      Clear KEYSAFEW0;
-     Success = TRUE;
+     Success = FALSE;
      Leave;
 
    Else;
@@ -720,6 +733,18 @@ END-PROC;
 
 
 //**************************************************************************
+DCL-PROC switchCatalogue;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+ Success = setCatalogue();
+ 
+
+END-PROC;
+
+
+//**************************************************************************
 DCL-PROC createNewCatalogueEntry;
 
  DCL-S Success IND INZ(TRUE);
@@ -808,9 +833,8 @@ DCL-PROC sendMessageToDisplay;
 
  MessageDS.Length = %Len(%TrimR(pMessage));
  If ( MessageDS.Length >= 0 );
-   sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length
-                      :'*INFO' :pProgramQueue :pCallStack
-                      :MessageDS.Key :MessageDS.Error);
+   sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length :'*INFO' 
+                      :pProgramQueue :pCallStack :MessageDS.Key :MessageDS.Error);
  EndIf;
 
 END-PROC;
@@ -819,6 +843,7 @@ END-PROC;
 //**************************************************************************
 DCL-PROC sendStatus;
  DCL-PI *N;
+   pMessageID CHAR(7) CONST;
    pMessage CHAR(256) CONST;
  END-PI;
 
@@ -827,7 +852,7 @@ DCL-PROC sendStatus;
 
  MessageDS.Length = %Len(%TrimR(pMessage));
  If ( MessageDS.Length >= 0 );
-   sendProgramMessage('CPF9897' :CPFMSG :pMessage :MessageDS.Length
+   sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length
                       :'*STATUS' :'*EXT' :0 :MessageDS.Key :MessageDS.Error);
  EndIf;
 

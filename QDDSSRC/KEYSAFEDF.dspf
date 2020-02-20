@@ -97,28 +97,6 @@
                                             COLOR(BLU)
 
       **************************************************************************
-                R KEYSAFEZS                 TEXT('Messagesubfile')
-                                            SFL
-                                            SFLMSGRCD(24)
-                  MESSAGEKEY                SFLMSGKEY
-                  PGMQUEUE                  SFLPGMQ(10)
-
-      **************************************************************************
-                R KEYSAVEZC                 TEXT('Messagecontrol')
-                                            SFLCTL(KEYSAFEZS)
-                                            CF01
-                                            KEEP
-                                            OVERLAY
-                                            PUTRETAIN
-                                            SFLDSP
-                                            SFLDSPCTL
-                                            SFLINZ
-       N88                                  SFLEND
-                                            SFLSIZ(2)
-                                            SFLPAG(1)
-                  PGMQUEUE                  SFLPGMQ(10)
-
-      **************************************************************************
                 R KEYSAFEW0                 TEXT('Window - Login')
                                             OVERLAY
                                             WINDOW(9 27 07 76 *NOMSGLIN)
@@ -212,7 +190,7 @@
       **************************************************************************
                 R KEYSAFEW2C                TEXT('Window - Prompt catalogues')
                                             OVERLAY
-                                            WINDOW(12 27 8 36 *NOMSGLIN)
+                                            WINDOW(12 36 8 36 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR WHT))
                                             WDWTITLE((*TEXT &W2CTITL) +
@@ -239,6 +217,9 @@
                   W2CCRCD       10A  H      ALIAS(W2C_CURRENT_RECORD)
                   W2CCFLD       10A  H      ALIAS(W2C_CURRENT_FIELD)
                   W2CCPOS        4S 0H      ALIAS(W2C_CURRENT_POSITION)
+
+                  W2CHEAD       34A  O  1  2MSGID(C000008 *LIBL/KEYMSGF)
+                                            COLOR(BLU) DSPATR(UL)
 
       **************************************************************************
                 R KEYSAFEW3                 TEXT('Window - Create catalogue')
@@ -285,7 +266,7 @@
                                             WINDOW(&W4WROW &W4WCOL -
                                                    05 30 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
-                                                      (*DSPATR RI) (*COLOR RED))
+                                                      (*DSPATR RI) (*COLOR YLW))
                                             CA12(12)
 
                   W4WROW         2S 0P      ALIAS(W4_WINDOW_ROW)
@@ -299,17 +280,35 @@
       **************************************************************************
                 R KEYSAFEW5                 TEXT('Window - Confirm changes')
                                             OVERLAY
-                                            WINDOW(&W5WROW &W5WCOL -
-                                                   05 30 *NOMSGLIN)
+                                            WINDOW(12 50 05 30 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
-                                                      (*DSPATR RI) (*COLOR YLW))
+                                                      (*DSPATR RI) (*COLOR RED))
                                             CA03(03) CA12(12)
-
-                  W5WROW         2S 0P      ALIAS(W5_WINDOW_ROW)
-                  W5WCOL         3S 0P      ALIAS(W5_WINDOW_COLUMN)
 
                   W5MI00        28A  O 02 02 MSGID(C000006 *LIBL/KEYMSGF)
                   W5MI01        28A  O 03 02 MSGID(C000007 *LIBL/KEYMSGF)
                                              DSPATR(UL)
                   W5MI02        28A  O 04 02 MSGID(F000004 *LIBL/KEYMSGF)
+
+      **************************************************************************
+                R KEYSAFEZS                 TEXT('Messagesubfile')
+                                            SFL
+                                            SFLMSGRCD(27)
+                  MESSAGEKEY                SFLMSGKEY
+                  PGMQUEUE                  SFLPGMQ(10)
+
+      **************************************************************************
+                R KEYSAFEZC                 TEXT('Messagecontrol')
+                                            SFLCTL(KEYSAFEZS)
+                                            CF01
+                                            KEEP
+                                            OVERLAY
+                                            PUTRETAIN
+                                            SFLDSP
+                                            SFLDSPCTL
+                                            SFLINZ
+       N88                                  SFLEND
+                                            SFLSIZ(2)
+                                            SFLPAG(1)
+                  PGMQUEUE                  SFLPGMQ(10)
 
