@@ -27,14 +27,14 @@
 // CAUTION: ALPHA-VERSION
 
 // TO-DOs:
-//  + Create new catalogues or delete catalogues
+//  + Delete catalogues
 //  + Add, edit, delete or view catalogue entries
 //     - With option hind or show passwordfield
 //  + For the future maybe change masterpassword for a catalogue?
 //  + Clean up source
 
 
-/INCLUDE QRPGLECPY,H_SPECS
+/INCLUDE KEYSAFE/QRPGLECPY,H_SPECS
 CTL-OPT MAIN(Main);
 
 
@@ -46,20 +46,21 @@ DCL-F KEYSAFEDF WORKSTN INDDS(WSDS) EXTFILE('KEYSAFEDF') ALIAS USROPN
 DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
 
 
-/INCLUDE QRPGLECPY,SYSTEM
-/INCLUDE QRPGLECPY,QMHSNDPM
+/INCLUDE KEYSAFE/QRPGLECPY,SYSTEM
+/INCLUDE KEYSAFE/QRPGLECPY,QMHSNDPM
 
-/INCLUDE QRPGLECPY,BOOLIC
-/INCLUDE QRPGLECPY,HEX_COLORS
+/INCLUDE KEYSAFE/QRPGLECPY,BOOLIC
+/INCLUDE KEYSAFE/QRPGLECPY,HEX_COLORS
 
-/INCLUDE QRPGLECPY,KEYSAFE_H
-/INCLUDE QRPGLECPY,PSDS
+/INCLUDE KEYSAFE/QRPGLECPY,KEYSAFE_H
+/INCLUDE KEYSAFE/QRPGLECPY,PSDS
 
 
 //#########################################################################
 DCL-PROC Main;
 
- /INCLUDE QRPGLECPY,SQLOPTIONS
+ /DEFINE SQL_WITH_COMMIT
+ /INCLUDE KEYSAFE/QRPGLECPY,SQLOPTIONS
 
  Reset This;
  *INLR = TRUE;
@@ -100,7 +101,7 @@ END-PROC;
 //**************************************************************************
 DCL-PROC loopFM_A;
 
- /INCLUDE QRPGLECPY,QUSCMDLN
+ /INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
 
  DCL-DS FMA LIKEREC(KEYSAFEAC :*ALL) INZ;
  //-------------------------------------------------------------------------
@@ -351,7 +352,8 @@ DCL-PROC setCatalogue;
          W0_Current_Column = 13;
        EndIf;
      Else;
-       sendMessageToDisplay('M000002' :'' :PgmQueue :CallStack);
+       W0_Message = retrieveMessageText('M000002');
+       WSDS.WindowShowMessage = TRUE;
      EndIf;
      Iter;
 
@@ -490,7 +492,7 @@ DCL-PROC setCataloguePassword;
          Clear W1_Password;
          Clear W1_Check_Password;
          Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT_TDES('1')
-                     WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL;
+                     WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL WITH NC;
          Success = Success And ( SQLCode = 0 );
 
          If Not Success And ( SQLCode <> 0 );
@@ -671,10 +673,10 @@ DCL-PROC createNewCatalogue;
          Exec SQL SET ENCRYPTION PASSWORD = :W3_Password;
          Clear W3_Password;
          Clear W3_Check_Password;
-         Exec SQL INSERT INTO KEYSAFE.CATALOGUES 
+         Exec SQL INSERT INTO KEYSAFE.CATALOGUES
                   (CATALOGUE_NAME, GUID, DESCRIPTION, KEYTEST)
                   VALUES(:W3_Catalogue_Name, CHAR(HEX(GUID())), RTRIM(:W3_Description),
-                         ENCRYPT_TDES('1'));
+                         ENCRYPT_TDES('1')) WITH NC;
          Success = Success And ( SQLCode = 0 );
 
          If Not Success And ( SQLCode <> 0 );
@@ -808,7 +810,7 @@ DCL-PROC clearMessages;
    pMessageCallStack INT(10) CONST;
  END-PI;
 
- /INCLUDE QRPGLECPY,QMHRMVPM
+ /INCLUDE KEYSAFE/QRPGLECPY,QMHRMVPM
 
  DCL-S Error CHAR(128) INZ;
  //-------------------------------------------------------------------------
@@ -825,9 +827,7 @@ DCL-PROC retrieveMessageText;
    pMessageData CHAR(16) CONST OPTIONS(*NOPASS);
  END-PI;
 
- /INCLUDE QRPGLECPY,QMHRTVM
-
- DCL-C KEYMSGF 'KEYMSGF   *LIBL';
+ /INCLUDE KEYSAFE/QRPGLECPY,QMHRTVM
 
  DCL-S MessageData CHAR(16) INZ;
  DCL-S Error CHAR(128) INZ;
