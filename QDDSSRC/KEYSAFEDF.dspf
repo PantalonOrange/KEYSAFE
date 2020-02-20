@@ -38,19 +38,19 @@
       **************************************************************************
                 R KEYSAFEAC                 TEXT('Mainscreen')
                                             OVERLAY INVITE
-                                            CA03(03) CA05(05) CA06(06)
-                                            CA09(09) CA11(11)
+                                            CA03(03) CA05(05) CA06(06) CA09(09)
+                                            CA11(11) CA17(17) CA18(18)
                                             MOUBTN(*UMD ROLLDOWN)
                                             MOUBTN(*UMP ROLLUP)
+                                            CSRLOC(ACCROW ACCCOL)
+                                            RTNCSRLOC(*MOUSE &ACCROW &ACCCOL)
+                                            RTNCSRLOC(&ACCRCD &ACCFLD &ACCPOS)
                                             SFLCTL(KEYSAFEAS)
                                             SFLPAG(17) SFLSIZ(18)
         30                                  SFLCLR
         31                                  SFLDSPCTL
         32                                  SFLDSP
         33                                  SFLEND(*MORE)
-                                            CSRLOC(ACCROW ACCCOL)
-                                            RTNCSRLOC(*MOUSE &ACCROW &ACCCOL)
-                                            RTNCSRLOC(&ACCRCD &ACCFLD &ACCPOS)
                                             SFLCSRRRN(&ACCURC)
                                             HLPCLR
                                             HLPTITLE('Secure key store')
@@ -126,7 +126,7 @@
                                                       (*DSPATR RI) (*COLOR BLU))
                                             WDWTITLE((*TEXT &W0TITL) +
                                                       (*DSPATR RI) (*COLOR WHT))
-                                            CA03(03) CA04(04) CA12(12)
+                                            CA03(03) CA04(04) CA06(06) CA12(12)
                                             CSRLOC(W0CROW W0CCOL)
                                             RTNCSRLOC(*MOUSE &W0CROW &W0CCOL)
                                             RTNCSRLOC(&W0CRCD &W0CFLD &W0CPOS)
@@ -191,10 +191,10 @@
                   W1CFOOT       74A  O  6  2MSGID(F000002 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
-                  W11PWD        60A  B  2 13COLOR(YLW) ALIAS(W1_PASSWORD)
-                                            CHECK(LC)
-                  W12PWD        60A  B  4 13COLOR(YLW) ALIAS(W1_CHECK_PASSWORD)
-                                            CHECK(LC)
+                  W11PWD        60A  B  2 13ALIAS(W1_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
+                  W12PWD        60A  B  4 13ALIAS(W1_CHECK_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
 
         50        W1MESS        74A  O  7  2COLOR(WHT) ALIAS(W1_MESSAGE)
 
@@ -211,14 +211,12 @@
 
       **************************************************************************
                 R KEYSAFEW2C                TEXT('Window - Prompt catalogues')
-                                            SFLCTL(KEYSAFEW2S)
-                                            SFLPAG(5) SFLSIZ(6)
                                             OVERLAY
-                                            WINDOW(9 27 8 36 *NOMSGLIN)
+                                            WINDOW(12 27 8 36 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
-                                                      (*DSPATR RI) (*COLOR GRN))
-                                            WDWTITLE((*TEXT &W2CTITL) +
                                                       (*DSPATR RI) (*COLOR WHT))
+                                            WDWTITLE((*TEXT &W2CTITL) +
+                                                      (*DSPATR RI) (*COLOR BLU))
                                             CA03(03) CA05(05) CA12(12)
                                             MOUBTN(*UMD ROLLDOWN)
                                             MOUBTN(*UMP ROLLUP)
@@ -226,6 +224,8 @@
                                             RTNCSRLOC(*MOUSE &W2CCROW &W2CCCOL)
                                             RTNCSRLOC(&W2CCRCD &W2CCFLD -
                                                       &W2CCPOS)
+                                            SFLCTL(KEYSAFEW2S)
+                                            SFLPAG(5) SFLSIZ(6)
                                             SFLCSRRRN(&W2CCURC)
         30                                  SFLCLR
         31                                  SFLDSPCTL
@@ -243,9 +243,9 @@
       **************************************************************************
                 R KEYSAFEW3                 TEXT('Window - Create catalogue')
                                             OVERLAY
-                                            WINDOW(9 27 07 76 *NOMSGLIN)
+                                            WINDOW(9 26 08 78 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
-                                                      (*DSPATR RI) (*COLOR GRN))
+                                                      (*DSPATR RI) (*COLOR BLU))
                                             WDWTITLE((*TEXT &W3TITL) +
                                                       (*DSPATR RI) (*COLOR WHT))
                                             CA03(03) CA12(12)
@@ -260,7 +260,24 @@
                   W3CFLD        10A  H      ALIAS(W3_CURRENT_FIELD)
                   W3CPOS         4S 0H      ALIAS(W3_CURRENT_POSITION)
 
-        50        W3MESS        74A  O  7  2COLOR(WHT) ALIAS(W3_MESSAGE)
+                  W3CCATA       12A  O  2  2MSGID(L000000 *LIBL/KEYMSGF)
+                  W3CDESC       12A  O  3  2MSGID(L000003 *LIBL/KEYMSGF)
+                  W3C1PWD       12A  O  4  2MSGID(L000001 *LIBL/KEYMSGF)
+                  W3C2PWD       12A  O  5  2MSGID(L000002 *LIBL/KEYMSGF)
+                  W3CLINE       74A  O  6  2COLOR(BLU) DSPATR(UL)
+                  W3CFOOT       74A  O  7  2MSGID(F000003 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+
+                  W3CATA        30A  B  2 15COLOR(YLW) ALIAS(W3_CATALOGUE_NAME)
+                                            CHECK(LC)
+                  W3DESC        60A  B  3 15COLOR(YLW) ALIAS(W3_DESCRIPTION)
+                                            CHECK(LC)
+                  W31PWD        60A  B  4 15ALIAS(W3_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
+                  W32PWD        60A  B  5 15ALIAS(W3_CHECK_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
+
+        50        W3MESS        74A  O  8  2COLOR(WHT) ALIAS(W3_MESSAGE)
 
       **************************************************************************
                 R KEYSAFEW4                 TEXT('Window - Confirm delete')

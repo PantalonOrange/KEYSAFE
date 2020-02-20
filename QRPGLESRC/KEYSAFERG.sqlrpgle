@@ -102,19 +102,18 @@ DCL-PROC loopFM_A;
 
  /INCLUDE QRPGLECPY,QUSCMDLN
 
- DCL-S Success IND INZ(TRUE);
-
  DCL-DS FMA LIKEREC(KEYSAFEAC :*ALL) INZ;
  //-------------------------------------------------------------------------
 
- Success = initFM_A();
-
- fetchRecordsFM_A();
+ initFM_A();
 
  DoW ( This.PictureControl = FM_A );
 
+   fetchRecordsFM_A();
+
    Write KEYSAFEAF;
    Write KEYSAFEAC;
+   Write KEYSAFEAF;
    ExFmt KEYSAFEAC;
 
    clearMessages(PgmQueue :CallStack);
@@ -125,20 +124,30 @@ DCL-PROC loopFM_A;
        This.PictureControl = FM_END;
 
      When WSDS.Refresh;
-       fetchRecordsFM_A();
+       initFM_A();
 
      When WSDS.NewEntry;
        //createNewCatalogueEntry();
 
      When WSDS.CommandLine;
        promptCommandLine();
-     
+
      When WSDS.Switch;
        //switchCatalogue();
 
+     When WSDS.JumpTop;
+       initFM_A();
+       AC_Current_Cursor = 1;
+       sendMessageToDisplay('S000000' :AS_Option :PgmQueue :CallStack);
+
+     When WSDS.JumpBottom;
+       initFM_A();
+       AC_Current_Cursor = MAX_RECORDS;
+       sendMessageToDisplay('S000001' :AS_Option :PgmQueue :CallStack);
+
      Other;
        checkFM_A();
-       fetchRecordsFM_A();
+       initFM_A();
        Iter;
 
    EndSl;
@@ -158,8 +167,17 @@ DCL-PROC initFM_A;
  Clear KEYSAFEAS;
 
  EvalR AC_Device = %TrimR(PSDS.JobName);
- Success = setCatalogue();
- AC_Catalogue = This.CatalogueName;
+
+ If ( This.CatalogueName = '' );
+   Success = setCatalogue();
+   AC_Catalogue = This.CatalogueName;
+ EndIf;
+
+ WSDS.SubfileClear = TRUE;
+ WSDS.SubfileDisplayControl = TRUE;
+ WSDS.SubfileDisplay = FALSE;
+ WSDS.SubfileMore = FALSE;
+ Write(E) KEYSAFEAC;
 
  AC_Current_Row = 7;
  AC_Current_Column = 3;
@@ -186,13 +204,8 @@ DCL-PROC fetchRecordsFM_A;
  END-DS;
  //-------------------------------------------------------------------------
 
+ Clear KEYSAFEAS;
  Reset AC_RecordNumber;
-
- WSDS.SubfileClear = TRUE;
- WSDS.SubfileDisplayControl = TRUE;
- WSDS.SubfileDisplay = FALSE;
- WSDS.SubfileMore = FALSE;
- Write(E) KEYSAFEAC;
 
  WSDS.SubfileClear = FALSE;
  WSDS.SubfileDisplayControl = TRUE;
@@ -209,7 +222,7 @@ DCL-PROC fetchRecordsFM_A;
  DoW ( This.Loop );
 
    Exec SQL FETCH NEXT FROM C_MAIN_LOOP INTO :ResultDS;
-   If ( SQLCode = 100 ) Or ( AC_RecordNumber = 9999 );
+   If ( SQLCode = 100 ) Or ( AC_RecordNumber = MAX_RECORDS );
      Exec SQL CLOSE C_MAIN_LOOP;
      Leave;
 
@@ -230,6 +243,7 @@ DCL-PROC fetchRecordsFM_A;
    SubfileDS.Remarks = ResultDS.Remarks;
 
    AC_RecordNumber += 1;
+   Clear AS_Option;
    AS_Subfile_Line = SubfileDS;
    AS_Record_Number = AC_RecordNumber;
    AS_Entry_GUID = ResultDS.Link;
@@ -240,6 +254,8 @@ DCL-PROC fetchRecordsFM_A;
 
  If ( AC_RecordNumber = 0 ) And ( This.GlobalMessage = '' );
    AC_RecordNumber = 1;
+   AC_Current_Row = 5;
+   AC_Current_Column = 6;
    AS_Subfile_Line = COLOR_GRN + retrieveMessageText('M000000');
    AS_Record_Number = AC_RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
@@ -247,6 +263,8 @@ DCL-PROC fetchRecordsFM_A;
 
  ElseIf ( AC_RecordNumber = 0 ) And ( This.GlobalMessage <> '' );
    AC_RecordNumber = 1;
+   AC_Current_Row = 5;
+   AC_Current_Column = 6;
    AS_Subfile_Line = COLOR_WHT + This.GlobalMessage;
    AS_Record_Number = AC_RecordNumber;
    WSDS.ShowSubfileOption = FALSE;
@@ -338,7 +356,8 @@ DCL-PROC setCatalogue;
      Iter;
 
    ElseIf WSDS.NewEntry;
-     //createNewCatalogue();
+     W0_Catalogue = createNewCatalogue();
+     Iter;
 
    ElseIf WSDS.Cancel;
      Clear KEYSAFEW0;
@@ -424,11 +443,9 @@ DCL-PROC setCataloguePassword;
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
+ Clear KEYSAFEW1;
  WSDS.WindowShowMessage = FALSE;
-
  W1_Window_Title = retrieveMessageText('W000001');
- Clear W1_Password;
- Clear W1_Check_Password;
 
  DoW ( This.Loop );
 
@@ -511,7 +528,7 @@ DCL-PROC searchCatalogue;
 
  Clear KEYSAFEW2C;
  Clear KEYSAFEW2S;
- 
+
  W2C_Window_Title = retrieveMessageText('W000002');
 
  DoW ( This.Loop );
@@ -528,25 +545,25 @@ DCL-PROC searchCatalogue;
    WSDS.SubfileDisplayControl = TRUE;
    WSDS.SubfileDisplay = TRUE;
    WSDS.SubfileMore = TRUE;
-   
-   Exec SQL DECLARE C_CATALOGUE_SEARCH SCROLL CURSOR FOR  
+
+   Exec SQL DECLARE C_CATALOGUE_SEARCH SCROLL CURSOR FOR
              SELECT DESCRIPTION, CATALOGUE_NAME FROM KEYSAFE.CATALOGUES
               ORDER BY CATALOGUE_NAME;
    Exec SQL OPEN C_CATALOGUE_SEARCH;
-   
+
    DoW ( This.Loop );
      Exec SQL FETCH NEXT FROM C_CATALOGUE_SEARCH INTO :W2S_Subfile_Line, :W2S_Catalogue_Name;
      If ( SQLCode = 100 ) Or ( W2C_RecordNumber = 9999 );
        Exec SQL CLOSE C_CATALOGUE_SEARCH;
        Leave;
      EndIf;
-     
+
      W2C_RecordNumber += 1;
      W2S_RecordNumber = W2C_RecordNumber;
      Write KEYSAFEW2S;
-     
+
    EndDo;
-   
+
    If ( W2C_RecordNumber = 0 );
      Clear W2S_Catalogue_Name;
      Leave;
@@ -558,29 +575,26 @@ DCL-PROC searchCatalogue;
    ExFmt KEYSAFEW2C;
 
    ReadC KEYSAFEW2S;
-   
+
    If Not %EoF();
-     
+
     If ( W2S_Option = '' );
       Iter;
-   
+
      ElseIf ( W2S_Option = '1' );
        Catalogue_Name = W2S_Catalogue_Name;
        Leave;
-       
+
      EndIf;
-     
+
    EndIf;
 
    If WSDS.Exit Or WSDS.Cancel;
      Leave;
-   
    ElseIf WSDS.Refresh;
      Iter;
-   
    Else;
      Iter;
-   
    EndIf;
 
  EndDo;
@@ -592,10 +606,99 @@ END-PROC;
 
 //**************************************************************************
 DCL-PROC createNewCatalogue;
+ DCL-PI *N CHAR(30) END-PI;
 
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
+ Clear KEYSAFEW3;
+ WSDS.WindowShowMessage = FALSE;
+ W3_Window_Title = retrieveMessageText('W000003');
+
+ DoW ( This.Loop );
+
+   Write KEYSAFEW3;
+   ExFmt KEYSAFEW3;
+
+   Reset Success;
+   WSDS.WindowShowMessage = FALSE;
+
+   If WSDS.Cancel;
+     Clear KEYSAFEW3;
+     Success = FALSE;
+     Leave;
+
+   Else;
+
+     Select;
+
+       When ( W3_Catalogue_Name = '' );
+         W3_Current_Row = 2;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText('E000004');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( W3_Description = '' );
+         W3_Current_Row = 3;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText('E000005');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( W3_Password = '' );
+         W3_Current_Row = 4;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText('E000001');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( W3_Check_Password = '' );
+         W3_Current_Row = 5;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText('E000001');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( W3_Password <> W3_Check_Password );
+         W3_Current_Row = 5;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText('E000002');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       Other;
+         Exec SQL SET ENCRYPTION PASSWORD = :W3_Password;
+         Clear W3_Password;
+         Clear W3_Check_Password;
+         Exec SQL INSERT INTO KEYSAFE.CATALOGUES 
+                  (CATALOGUE_NAME, GUID, DESCRIPTION, KEYTEST)
+                  VALUES(:W3_Catalogue_Name, CHAR(HEX(GUID())), RTRIM(:W3_Description),
+                         ENCRYPT_TDES('1'));
+         Success = Success And ( SQLCode = 0 );
+
+         If Not Success And ( SQLCode <> 0 );
+           Exec SQL GET DIAGNOSTICS CONDITION 1 :W3_Message = MESSAGE_TEXT;
+           WSDS.WindowShowMessage = TRUE;
+           Iter;
+
+         ElseIf Not Success And ( SQLCode = 0 );
+           W3_Message = retrieveMessageText('E000003');
+           WSDS.WindowShowMessage = TRUE;
+           Iter;
+
+         ElseIf Success;
+           Leave;
+
+         EndIf;
+
+     EndSl;
+
+   EndIf;
+
+ EndDo;
+
+ Return W3_Catalogue_Name;
 
 END-PROC;
 
@@ -655,7 +758,7 @@ DCL-PROC sendMessageToDisplay;
  MessageDS.Length = %Len(%TrimR(pMessage));
  If ( MessageDS.Length >= 0 );
    sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length
-                      :'*INFO' :pProgramQueue :pCallStack 
+                      :'*INFO' :pProgramQueue :pCallStack
                       :MessageDS.Key :MessageDS.Error);
  EndIf;
 
