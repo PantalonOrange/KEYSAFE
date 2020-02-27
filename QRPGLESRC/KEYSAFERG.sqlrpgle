@@ -233,9 +233,9 @@ DCL-PROC fetchRecordsFM_A;
  WSDS.SubfileDisplayControl = TRUE;
  WSDS.SubfileDisplay = TRUE;
  WSDS.SubfileMore = TRUE;
- 
+
  sendStatus('S000000' :'');
- 
+
  SearchDescriptionShort = '%' + %TrimR(AC_Entry_Find) + '%';
  SearchRemarks = '%' + %TrimR(AC_Remark_Find) + '%';
 
@@ -299,12 +299,13 @@ DCL-PROC fetchRecordsFM_A;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
- EndIf;
-
- If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= AC_RecordNumber );
-   AC_RecordNumber = AC_Current_Cursor;
  Else;
-   AC_RecordNumber = 1;
+   If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= AC_RecordNumber );
+     AC_RecordNumber = AC_Current_Cursor;
+   Else;
+     AC_RecordNumber = 1;
+   EndIf;
+
  EndIf;
 
 END-PROC;
@@ -327,7 +328,7 @@ DCL-PROC checkFM_A;
        //editCatalogueEntry();
 
      When ( AS_Option = '4' );
-       //deleteCatalogueEntry();
+       deleteCatalogueEntry();
 
      When ( AS_Option = '5' );
        //viewCatalogueEntry();
@@ -389,9 +390,15 @@ DCL-PROC setCatalogue;
      Iter;
 
    ElseIf WSDS.Cancel;
-     Clear KEYSAFEW0;
-     Success = FALSE;
-     Leave;
+     If ( This.CatalogueName = '' );
+       Clear KEYSAFEW0;
+       Success = FALSE;
+       Leave;
+     Else;
+       W0_Message = retrieveMessageText('M000003');
+       WSDS.WindowShowMessage = TRUE;
+       Iter;
+     EndIf;
 
    Else;
 
@@ -739,7 +746,6 @@ DCL-PROC switchCatalogue;
  //-------------------------------------------------------------------------
 
  Success = setCatalogue();
- 
 
 END-PROC;
 
@@ -767,9 +773,24 @@ END-PROC;
 //**************************************************************************
 DCL-PROC deleteCatalogueEntry;
 
- DCL-S Success IND INZ(TRUE);
+ DCL-S ErrorMessage CHAR(128) INZ;
  //-------------------------------------------------------------------------
 
+ W4_Window_Row = AC_Current_Row - 2;
+ W4_Window_Column = AC_Current_Column + 2;
+ 
+ Write KEYSAFEW4;
+ ExFmt KEYSAFEW4;
+ 
+ If Not WSDS.Cancel;
+   Exec SQL DELETE FROM KEYSAFE.LINES WHERE LINK = :AS_Entry_GUID WITH CS;
+   If ( SQLCode <> 0 );
+     Exec SQL GET DIAGNOSTICS CONDITION 1 :ErrorMessage = MESSAGE_TEXT;
+     sendMessageToDisplay('E999999' :ErrorMessage :PgmQueue :CallStack);
+   EndIf;
+ Else;
+   sendMessageToDisplay('M000004' :'' :PgmQueue :CallStack);
+ EndIf;
 
 END-PROC;
 
@@ -793,27 +814,27 @@ DCL-PROC checkForOpenCommits;
  //-------------------------------------------------------------------------
 
  Exec SQL GET DIAGNOSTICS :ActiveTransactions = TRANSACTION_ACTIVE;
- 
+
  If ( SQLCode = 0 ) And ( ActiveTransactions > 0 );
 
    Write KEYSAFEW5;
    ExFmt KEYSAFEW5;
-   
+
    If ( WSDS.Exit );
      Exec SQL ROLLBACK;
      ReturnParm = TRUE;
-   
+
    ElseIf ( WSDS.Cancel );
      ReturnParm = FALSE;
-   
+
    Else;
      Exec SQL COMMIT;
      ReturnParm = TRUE;
-   
+
    EndIf;
-   
+
  EndIf;
- 
+
  Return ReturnParm;
 
 END-PROC;
@@ -833,7 +854,7 @@ DCL-PROC sendMessageToDisplay;
 
  MessageDS.Length = %Len(%TrimR(pMessage));
  If ( MessageDS.Length >= 0 );
-   sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length :'*INFO' 
+   sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length :'*INFO'
                       :pProgramQueue :pCallStack :MessageDS.Key :MessageDS.Error);
  EndIf;
 
