@@ -109,10 +109,6 @@
                                             RTNCSRLOC(*MOUSE &W0CROW &W0CCOL)
                                             RTNCSRLOC(&W0CRCD &W0CFLD &W0CPOS)
                                             HLPTITLE('Log in')
-                H                           HLPPNLGRP('CATALOGUE' KEYHLP)
-                                            HLPARA(*FLD W0CATA)
-                H                           HLPPNLGRP('PASSWORD' KEYHLP)
-                                            HLPARA(*FLD W0PASS)
                 H                           HLPPNLGRP('KEYSAFEW0' KEYHLP)
                                             HLPARA(*RCD)
 
@@ -148,11 +144,7 @@
                                             CSRLOC(W1CROW W1CCOL)
                                             RTNCSRLOC(*MOUSE &W1CROW &W1CCOL)
                                             RTNCSRLOC(&W1CRCD &W1CFLD &W1CPOS)
-                                            HLPTITLE('Set password')
-                H                           HLPPNLGRP('PASSWORD' KEYHLP)
-                                            HLPARA(*FLD W11PWD)
-                H                           HLPPNLGRP('PASSWORD' KEYHLP)
-                                            HLPARA(*FLD W12PWD)
+                                            HLPTITLE('Set masterpassword')
                 H                           HLPPNLGRP('KEYSAFEW1' KEYHLP)
                                             HLPARA(*RCD)
 
@@ -233,6 +225,9 @@
                                             CSRLOC(W3CROW W3CCOL)
                                             RTNCSRLOC(*MOUSE &W3CROW &W3CCOL)
                                             RTNCSRLOC(&W3CRCD &W3CFLD &W3CPOS)
+                                            HLPTITLE('Create catalogue')
+                H                           HLPPNLGRP('KEYSAFEW3' KEYHLP)
+                                            HLPARA(*RCD)
 
                   W3TITL        60A  P      ALIAS(W3_WINDOW_TITLE)
                   W3CROW         3S 0H      ALIAS(W3_CURRENT_ROW)
@@ -268,6 +263,9 @@
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR YLW))
                                             CA12(12)
+                                            HLPTITLE('Confirm delete')
+                H                           HLPPNLGRP('KEYSAFEW4' KEYHLP)
+                                            HLPARA(*RCD)
 
                   W4WROW         2S 0P      ALIAS(W4_WINDOW_ROW)
                   W4WCOL         3S 0P      ALIAS(W4_WINDOW_COLUMN)
@@ -284,11 +282,64 @@
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR RED))
                                             CA03(03) CA12(12)
+                                            HLPTITLE('Confirm changes')
+                H                           HLPPNLGRP('KEYSAFEW5' KEYHLP)
+                                            HLPARA(*RCD)
 
                   W5MI00        28A  O 02 02 MSGID(C000006 *LIBL/KEYMSGF)
                   W5MI01        28A  O 03 02 MSGID(C000007 *LIBL/KEYMSGF)
                                              DSPATR(UL)
                   W5MI02        28A  O 04 02 MSGID(F000004 *LIBL/KEYMSGF)
+
+      **************************************************************************
+                R KEYSAFEW6                 TEXT('Window - Create/change entry')
+                                            OVERLAY
+                                            WINDOW(1 2 24 126 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR BLU))
+                                            WDWTITLE((*TEXT &W6TITL) +
+                                                      (*DSPATR RI) (*COLOR WHT))
+                                            CA03(03) CA12(12)
+                                            CSRLOC(W6CROW W6CCOL)
+                                            RTNCSRLOC(*MOUSE &W6CROW &W6CCOL)
+                                            RTNCSRLOC(&W6CRCD &W6CFLD &W6CPOS)
+                                            HLPTITLE('Create/change entry')
+                H                           HLPPNLGRP('KEYSAFEW6' KEYHLP)
+                                            HLPARA(*RCD)
+
+                  W6TITL        60A  P      ALIAS(W6_WINDOW_TITLE)
+                  W6CROW         3S 0H      ALIAS(W6_CURRENT_ROW)
+                  W6CCOL         3S 0H      ALIAS(W6_CURRENT_COLUMN)
+                  W6CRCD        10A  H      ALIAS(W6_CURRENT_RECORD)
+                  W6CFLD        10A  H      ALIAS(W6_CURRENT_FIELD)
+                  W6CPOS         4S 0H      ALIAS(W6_CURRENT_POSITION)
+
+                  W6CDSCS       18A  O  2  2MSGID(L000004 *LIBL/KEYMSGF)
+                  W6CDSCL       18A  O  4  2MSGID(L000005 *LIBL/KEYMSGF)
+                  W6CUSER        9A  O  7  2MSGID(L000006 *LIBL/KEYMSGF)
+                  W6CPASS        9A  O 10  2MSGID(L000007 *LIBL/KEYMSGF)
+                  W6CUURL        4A  O 13  2MSGID(L000008 *LIBL/KEYMSGF)
+                  W6CREMA        8A  O 16  2MSGID(L000009 *LIBL/KEYMSGF)
+                  W6CLINE      124A  O 22  2COLOR(BLU) DSPATR(UL)
+                  W6CFOOT      124A  O 23  2MSGID(F000002 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+
+                  W6DSCS       124A  B  3  2ALIAS(W6_DESCRIPTION_SHORT)
+                                            CHECK(LC) COLOR(YLW)
+                  W6DSCL       248A  B  5  2ALIAS(W6_DESCRIPTION_LONG)
+                                            CHECK(LC) COLOR(YLW) CNTFLD(124)
+                  W6USER       248A  B  8  2ALIAS(W6_USERNAME)
+                                            CHECK(LC) COLOR(YLW) CNTFLD(124)
+                  W6PASS       248A  B 11  2ALIAS(W6_PASSWORD)
+                                            CHECK(LC) COLOR(YLW) CNTFLD(124)
+        49                                  DSPATR(ND)
+                  W6UURL       248A  B 14  2ALIAS(W6_URL)
+                                            CHECK(LC) COLOR(YLW) CNTFLD(124)
+                  W6REMA       620A  B 17  2ALIAS(W6_REMARKS)
+                                            CHECK(LC) COLOR(YLW) CNTFLD(124)
+
+        50        W6MESS       124A  O 24  2COLOR(WHT) ALIAS(W6_MESSAGE)
+
 
       **************************************************************************
                 R KEYSAFEZS                 TEXT('Messagesubfile')

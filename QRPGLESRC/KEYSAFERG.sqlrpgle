@@ -24,11 +24,11 @@
 // This program stores different login data in different catalogues encrypted by db2
 //  crypto-services. Please also use telnet over tls :-)
 
-// CAUTION: ALPHA-VERSION
+// CAUTION: IN WORK!
 
 // TO-DOs:
 //  + Delete catalogues
-//  + Add, edit, delete or view catalogue entries
+//  + Add, edit or view catalogue entries
 //     - With option hind or show passwordfield
 //  + For the future maybe change masterpassword for a catalogue?
 //  + Clean up source
@@ -151,7 +151,9 @@ DCL-PROC loopFM_A;
        initFM_A();
 
      When WSDS.Switch;
-       switchCatalogue();
+       If Not switchCatalogue();
+         sendMessageToDisplay('M000004' :'' :PgmQueue :CallStack);
+       EndIf;
        initFM_A();
 
      When WSDS.JumpTop;
@@ -741,11 +743,18 @@ END-PROC;
 
 //**************************************************************************
 DCL-PROC switchCatalogue;
+ DCL-PI *N IND END-PI;
 
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
- Success = setCatalogue();
+ If checkForOpenCommits();
+   Success = setCatalogue();
+ Else;
+   Success = FALSE;
+ EndIf;
+
+ Return Success;
 
 END-PROC;
 
@@ -778,10 +787,10 @@ DCL-PROC deleteCatalogueEntry;
 
  W4_Window_Row = AC_Current_Row - 2;
  W4_Window_Column = AC_Current_Column + 2;
- 
+
  Write KEYSAFEW4;
  ExFmt KEYSAFEW4;
- 
+
  If Not WSDS.Cancel;
    Exec SQL DELETE FROM KEYSAFE.LINES WHERE LINK = :AS_Entry_GUID WITH CS;
    If ( SQLCode <> 0 );
@@ -853,7 +862,7 @@ DCL-PROC sendMessageToDisplay;
  //-------------------------------------------------------------------------
 
  MessageDS.Length = %Len(%TrimR(pMessage));
- If ( MessageDS.Length >= 0 );
+ If ( pMessageID <> '' );
    sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length :'*INFO'
                       :pProgramQueue :pCallStack :MessageDS.Key :MessageDS.Error);
  EndIf;
@@ -872,7 +881,7 @@ DCL-PROC sendStatus;
  //-------------------------------------------------------------------------
 
  MessageDS.Length = %Len(%TrimR(pMessage));
- If ( MessageDS.Length >= 0 );
+ If ( pMessageID <> '' );
    sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length
                       :'*STATUS' :'*EXT' :0 :MessageDS.Key :MessageDS.Error);
  EndIf;
