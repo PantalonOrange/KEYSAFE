@@ -47,6 +47,7 @@ DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
 
 
 /INCLUDE KEYSAFE/QRPGLECPY,SYSTEM
+/INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
 /INCLUDE KEYSAFE/QRPGLECPY,QMHSNDPM
 
 /INCLUDE KEYSAFE/QRPGLECPY,BOOLIC
@@ -106,8 +107,6 @@ END-PROC;
 //**************************************************************************
 DCL-PROC loopFM_A;
 
- /INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
-
  DCL-DS FMA LIKEREC(KEYSAFEAC :*ALL) INZ;
  //-------------------------------------------------------------------------
 
@@ -144,7 +143,8 @@ DCL-PROC loopFM_A;
        initFM_A();
 
      When WSDS.NewEntry;
-       //createNewCatalogueEntry();
+       createNewCatalogueEntry();
+       initFM_A();
 
      When WSDS.CommandLine;
        promptCommandLine();
@@ -763,8 +763,56 @@ END-PROC;
 DCL-PROC createNewCatalogueEntry;
 
  DCL-S Success IND INZ(TRUE);
+ DCL-S GUID CHAR(32) INZ;
  //-------------------------------------------------------------------------
 
+ Clear KEYSAFEW6;
+ WSDS.WindowShowMessage = FALSE;
+ W6_Window_Title = %TrimR(retrieveMessageText('W000004')) + ' (' + 
+                    %TrimR(This.CatalogueName) + ')';
+ 
+ DoW ( This.Loop );
+ 
+   Write KEYSAFEW6;
+   ExFmt KEYSAFEW6;
+ 
+   If WSDS.Exit;
+     Leave;
+     
+   ElseIf WSDS.Refresh;
+     Iter;
+   
+   ElseIf WSDS.CommandLine;
+     promptCommandLine();
+     Iter;
+   
+   ElseIf WSDS.Cancel;
+     Leave;
+   
+   Else;
+     Exec SQL SELECT LINK INTO :GUID FROM FINAL TABLE
+              (INSERT INTO KEYSAFE.MAIN (MAIN_INDEX, LINK)
+               VALUES(:This.CatalogueGUID, CHAR(HEX(GUID())))) WITH CS;
+     If ( SQLCode = 0 );
+       Exec SQL INSERT INTO KEYSAFE.LINES
+                (LINK, DESCRIPTION_SHORT, DESCRIPTION_LONG, USERNAME, USER_PASSWORD, URL, REMARKS)
+                 VALUES(:GUID, ENCRYPT_TDES(RTRIM(:W6_Description_Short)), 
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Long), '')),
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_UserName), '')), 
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_Password), '')),
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_URL), '')), 
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_Remarks), ''))) 
+                WITH CS;
+     EndIf;
+     If ( SQLCode <> 0 );
+       Exec SQL GET DIAGNOSTICS CONDITION 1 :W6_Message = MESSAGE_TEXT;
+       WSDS.WindowShowMessage = TRUE;
+     Else;
+       Leave;
+     EndIf;
+   EndIf;
+ 
+ EndDo;
 
 END-PROC;
 

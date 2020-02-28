@@ -299,7 +299,7 @@
                                                       (*DSPATR RI) (*COLOR BLU))
                                             WDWTITLE((*TEXT &W6TITL) +
                                                       (*DSPATR RI) (*COLOR WHT))
-                                            CA03(03) CA12(12)
+                                            CA03(03) CA05(05) CA09(09) CA12(12)
                                             CSRLOC(W6CROW W6CCOL)
                                             RTNCSRLOC(*MOUSE &W6CROW &W6CCOL)
                                             RTNCSRLOC(&W6CRCD &W6CFLD &W6CPOS)
@@ -321,7 +321,7 @@
                   W6CUURL        4A  O 13  2MSGID(L000008 *LIBL/KEYMSGF)
                   W6CREMA        8A  O 16  2MSGID(L000009 *LIBL/KEYMSGF)
                   W6CLINE      124A  O 22  2COLOR(BLU) DSPATR(UL)
-                  W6CFOOT      124A  O 23  2MSGID(F000002 *LIBL/KEYMSGF)
+                  W6CFOOT      124A  O 23  2MSGID(F000005 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
                   W6DSCS       124A  B  3  2ALIAS(W6_DESCRIPTION_SHORT)
