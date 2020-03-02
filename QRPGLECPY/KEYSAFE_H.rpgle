@@ -27,39 +27,55 @@
 
 DCL-C FM_A 'A';
 DCL-C FM_END '*';
+DCL-C MAX_RECORDS 9999;
 
 DCL-S AC_RecordNumber UNS(10) INZ;
 DCL-S W2C_RecordNumber UNS(10) INZ;
 DCL-S PgmQueue CHAR(10) INZ('MAIN');
 DCL-S CallStack INT(10) INZ;
 
-DCL-DS MessageHandling_T TEMPLATE QUALIFIED;
-  Length INT(10);
-  Key CHAR(4);
-  Error CHAR(128);
-END-DS;
-
 DCL-DS This QUALIFIED;
-  PictureControl CHAR(1) INZ(FM_A);
-  Loop IND INZ(TRUE);
-  RecordsFound INT(10) INZ;
-  GlobalMessage CHAR(130) INZ;
-  CatalogueGUID CHAR(32) INZ;
-  CatalogueName CHAR(40) INZ;
+ PictureControl CHAR(1) INZ(FM_A);
+ Loop IND INZ(TRUE);
+ RecordsFound INT(10) INZ;
+ GlobalMessage CHAR(130) INZ;
+ CatalogueGUID CHAR(32) INZ;
+ CatalogueName CHAR(40) INZ;
 END-DS;
 
 DCL-DS WSDS QUALIFIED;
-  Exit IND POS(3);
-  SearchEntry IND POS(4);
-  Refresh IND POS(5);
-  NewEntry IND POS(6);
-  CommandLine IND POS(9);
-  Switch IND POS(11);
-  Cancel IND POS(12);
-  SubfileClear IND POS(30);
-  SubfileDisplayControl IND POS(31);
-  SubfileDisplay IND POS(32);
-  SubfileMore IND POS(33);
-  ShowSubfileOption IND POS(40);
-  WindowShowMessage IND POS(50);
+ Exit IND POS(3);
+ SearchEntry IND POS(4);
+ Refresh IND POS(5);
+ NewEntry IND POS(6);
+ CommandLine IND POS(9);
+ Switch IND POS(11);
+ Cancel IND POS(12);
+ JumpTop IND POS(17);
+ JumpBottom IND POS(18);
+ SubfileClear IND POS(30);
+ SubfileDisplayControl IND POS(31);
+ SubfileDisplay IND POS(32);
+ SubfileMore IND POS(33);
+ ShowSubfileOption IND POS(40);
+ LockWindowEntry IND POS(48);
+ HidePassword IND POS(49);
+ WindowShowMessage IND POS(50);
+END-DS;
+
+DCL-DS MessageHandling_T TEMPLATE QUALIFIED;
+ Length INT(10);
+ Key CHAR(4);
+ Error CHAR(128);
+END-DS;
+
+DCL-DS Catalogue_Entry_T TEMPLATE QUALIFIED;
+ Description_Short CHAR(128);
+ Description_Long CHAR(256);
+ UserName CHAR(256);
+ Password CHAR(256);
+ URL CHAR(256);
+ Remarks CHAR(1024);
+ Stamp TIMESTAMP;
+ LastUser CHAR(128);
 END-DS;

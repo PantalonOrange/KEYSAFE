@@ -28,8 +28,6 @@
 
 // TO-DOs:
 //  + Delete catalogues
-//  + Add, edit or view catalogue entries
-//     - With option hind or show passwordfield
 //  + For the future maybe change masterpassword for a catalogue?
 //  + Clean up source
 
@@ -242,11 +240,11 @@ DCL-PROC fetchRecordsFM_A;
  SearchRemarks = '%' + %TrimR(AC_Remark_Find) + '%';
 
  Exec SQL DECLARE C_MAIN_LOOP SCROLL CURSOR FOR
-           SELECT LINK, DESCRIPTION_SHORT, LEFT(REMARKS, 80)
+           SELECT LINK, DESCRIPTION_SHORT, LEFT(IFNULL(REMARKS, ''), 80)
              FROM KEYSAFE.MAIN_LOOP
             WHERE MAIN_INDEX = :This.CatalogueGUID
               AND UPPER(DESCRIPTION_SHORT) LIKE RTRIM(UPPER(:SearchDescriptionShort))
-              AND UPPER(REMARKS) LIKE RTRIM(UPPER(:SearchRemarks))
+              AND UPPER(IFNULL(REMARKS, '')) LIKE RTRIM(UPPER(:SearchRemarks))
             ORDER BY DESCRIPTION_SHORT;
  Exec SQL OPEN C_MAIN_LOOP;
 
@@ -327,13 +325,13 @@ DCL-PROC checkFM_A;
        Iter;
 
      When ( AS_Option = '2' );
-       //editCatalogueEntry();
+       editCatalogueEntry(AS_Entry_GUID);
 
      When ( AS_Option = '4' );
-       deleteCatalogueEntry();
+       deleteCatalogueEntry(AS_Entry_GUID);
 
      When ( AS_Option = '5' );
-       //viewCatalogueEntry();
+       viewCatalogueEntry(AS_Entry_GUID);
 
      Other;
        sendMessageToDisplay('M000001' :AS_Option :PgmQueue :CallStack);
@@ -767,41 +765,70 @@ DCL-PROC createNewCatalogueEntry;
  //-------------------------------------------------------------------------
 
  Clear KEYSAFEW6;
+ WSDS.LockWindowEntry = FALSE;
+ WSDS.HidePassword = FALSE;
  WSDS.WindowShowMessage = FALSE;
- W6_Window_Title = %TrimR(retrieveMessageText('W000004')) + ' (' + 
+ W6_Window_Title = %TrimR(retrieveMessageText('W000004')) + ' (' +
                     %TrimR(This.CatalogueName) + ')';
- 
+
  DoW ( This.Loop );
- 
+
    Write KEYSAFEW6;
    ExFmt KEYSAFEW6;
- 
+   
+   W6_Current_Row -= 1;
+   W6_Current_Column -= 3;
+
    If WSDS.Exit;
      Leave;
-     
+
    ElseIf WSDS.Refresh;
      Iter;
-   
+
    ElseIf WSDS.CommandLine;
      promptCommandLine();
      Iter;
    
+   ElseIf WSDS.Switch;
+     If WSDS.HidePassword = TRUE;
+       WSDS.HidePassword = FALSE;
+     Else;
+       WSDS.HidePassword = TRUE;
+     EndIf;
+     Iter;
+
    ElseIf WSDS.Cancel;
      Leave;
-   
+
    Else;
+     If ( W6_Description_Short = '' );
+       W6_Current_Row = 3;
+       W6_Current_Column = 2;
+       WSDS.WindowShowMessage = TRUE;
+       W6_Message = retrieveMessageText('E000005');
+       Success = FALSE;
+     
+     Else;
+       Reset Success;
+     
+     EndIf;
+     
+     If Not Success;
+       Iter;
+     EndIf;
+     
      Exec SQL SELECT LINK INTO :GUID FROM FINAL TABLE
               (INSERT INTO KEYSAFE.MAIN (MAIN_INDEX, LINK)
                VALUES(:This.CatalogueGUID, CHAR(HEX(GUID())))) WITH CS;
      If ( SQLCode = 0 );
        Exec SQL INSERT INTO KEYSAFE.LINES
                 (LINK, DESCRIPTION_SHORT, DESCRIPTION_LONG, USERNAME, USER_PASSWORD, URL, REMARKS)
-                 VALUES(:GUID, ENCRYPT_TDES(RTRIM(:W6_Description_Short)), 
+                 VALUES(:GUID, ENCRYPT_TDES(RTRIM(:W6_Description_Short)),
                         ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Long), '')),
-                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_UserName), '')), 
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_UserName), '')),
                         ENCRYPT_TDES(NULLIF(RTRIM(:W6_Password), '')),
-                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_URL), '')), 
-                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_Remarks), ''))) 
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_URL), '')),
+                        ENCRYPT_TDES(NULLIF(RTRIM(:W6_Remarks), '')))
                 WITH CS;
      EndIf;
      If ( SQLCode <> 0 );
@@ -811,7 +838,7 @@ DCL-PROC createNewCatalogueEntry;
        Leave;
      EndIf;
    EndIf;
- 
+
  EndDo;
 
 END-PROC;
@@ -819,16 +846,117 @@ END-PROC;
 
 //**************************************************************************
 DCL-PROC editCatalogueEntry;
+ DCL-PI *N;
+  pGUID CHAR(32) CONST;
+ END-PI;
 
  DCL-S Success IND INZ(TRUE);
+ DCL-DS EntryDS LIKEDS(Catalogue_Entry_T) INZ;
  //-------------------------------------------------------------------------
 
+ Clear KEYSAFEW6;
+ WSDS.LockWindowEntry = FALSE;
+ WSDS.HidePassword = TRUE;
+ WSDS.WindowShowMessage = FALSE;
+ W6_Window_Title = %TrimR(retrieveMessageText('W000004')) + ' (' +
+                    %TrimR(This.CatalogueName) + ')';
+ 
+ If Not getCatalogueEntry(pGUID :EntryDS);
+   Return;
+ Else;
+   loadCatalogieEntryToScreen(EntryDS);
+ EndIf;
+
+ DoW ( This.Loop );
+
+   Write KEYSAFEW6;
+   ExFmt KEYSAFEW6;
+   
+   W6_Current_Row -= 1;
+   W6_Current_Column -= 3;
+
+   If WSDS.Exit;
+     Leave;
+
+   ElseIf WSDS.Refresh;
+     loadCatalogieEntryToScreen(EntryDS);
+     Iter;
+
+   ElseIf WSDS.CommandLine;
+     promptCommandLine();
+     Iter;
+   
+   ElseIf WSDS.Switch;
+     If WSDS.HidePassword = TRUE;
+       WSDS.HidePassword = FALSE;
+     Else;
+       WSDS.HidePassword = TRUE;
+     EndIf;
+     Iter;
+
+   ElseIf WSDS.Cancel;
+     Leave;
+
+   Else;
+     If ( W6_Description_Short = '' );
+       W6_Current_Row = 3;
+       W6_Current_Column = 2;
+       WSDS.WindowShowMessage = TRUE;
+       W6_Message = retrieveMessageText('E000005');
+       Success = FALSE;
+     
+     Else;
+       Reset Success;
+     
+     EndIf;
+     
+     If Not Success;
+       Iter;
+     EndIf;
+     
+     If ( W6_Description_Short <> EntryDS.Description_Short ) 
+      Or ( W6_Description_Long <> EntryDS.Description_Long )
+      Or ( W6_UserName <> EntryDS.UserName )
+      Or ( W6_Password <> EntryDS.Password )
+      Or ( W6_URL <> EntryDS.URL )
+      Or ( W6_Remarks <> EntryDS.Remarks );
+       Exec SQL UPDATE KEYSAFE.LINES
+                   SET DESCRIPTION_SHORT = ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Short), '')),
+                       DESCRIPTION_LONG = ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Long), '')),
+                       USERNAME = ENCRYPT_TDES(NULLIF(RTRIM(:W6_UserName), '')),
+                       USER_PASSWORD = ENCRYPT_TDES(NULLIF(RTRIM(:W6_Password), '')),
+                       URL = ENCRYPT_TDES(NULLIF(RTRIM(:W6_URL), '')),
+                       REMARKS = ENCRYPT_TDES(NULLIF(RTRIM(:W6_Remarks), '')),
+                       STAMP = CURRENT_TIMESTAMP,
+                       LAST_USER = USER
+                 WHERE LINK = :pGUID WITH CS;
+       If ( SQLCode <> 0 );
+         Exec SQL GET DIAGNOSTICS CONDITION 1 :W6_Message = MESSAGE_TEXT;
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+         
+       Else;
+         Leave;
+         
+       EndIf;
+       
+     Else;
+       Leave;
+       
+     EndIf;
+     
+   EndIf;
+
+ EndDo;
 
 END-PROC;
 
 
 //**************************************************************************
 DCL-PROC deleteCatalogueEntry;
+ DCL-PI *N;
+  pGUID CHAR(32) CONST;
+ END-PI;
 
  DCL-S ErrorMessage CHAR(128) INZ;
  //-------------------------------------------------------------------------
@@ -840,7 +968,7 @@ DCL-PROC deleteCatalogueEntry;
  ExFmt KEYSAFEW4;
 
  If Not WSDS.Cancel;
-   Exec SQL DELETE FROM KEYSAFE.LINES WHERE LINK = :AS_Entry_GUID WITH CS;
+   Exec SQL DELETE FROM KEYSAFE.LINES WHERE LINK = :pGUID WITH CS;
    If ( SQLCode <> 0 );
      Exec SQL GET DIAGNOSTICS CONDITION 1 :ErrorMessage = MESSAGE_TEXT;
      sendMessageToDisplay('E999999' :ErrorMessage :PgmQueue :CallStack);
@@ -854,10 +982,102 @@ END-PROC;
 
 //**************************************************************************
 DCL-PROC viewCatalogueEntry;
+ DCL-PI *N;
+  pGUID CHAR(32) CONST;
+ END-PI;
 
  DCL-S Success IND INZ(TRUE);
+ DCL-DS EntryDS LIKEDS(Catalogue_Entry_T) INZ;
  //-------------------------------------------------------------------------
 
+ Clear KEYSAFEW6;
+ WSDS.LockWindowEntry = TRUE;
+ WSDS.HidePassword = TRUE;
+ WSDS.WindowShowMessage = FALSE;
+ W6_Window_Title = %TrimR(retrieveMessageText('W000004')) + ' (' +
+                    %TrimR(This.CatalogueName) + ')';
+ 
+ If Not getCatalogueEntry(pGUID :EntryDS);
+   Return;
+ Else;
+   loadCatalogieEntryToScreen(EntryDS);
+ EndIf;
+
+ DoW ( This.Loop );
+
+   Write KEYSAFEW6;
+   ExFmt KEYSAFEW6;
+   
+   W6_Current_Row -= 1;
+   W6_Current_Column -= 3;
+
+   If WSDS.Exit;
+     Leave;
+
+   ElseIf WSDS.Refresh;
+     loadCatalogieEntryToScreen(EntryDS);
+     Iter;
+
+   ElseIf WSDS.CommandLine;
+     promptCommandLine();
+     Iter;
+   
+   ElseIf WSDS.Switch;
+     If WSDS.HidePassword = TRUE;
+       WSDS.HidePassword = FALSE;
+     Else;
+       WSDS.HidePassword = TRUE;
+     EndIf;
+     Iter;
+
+   ElseIf WSDS.Cancel;
+     Leave;
+
+   Else;
+     Leave;
+     
+   EndIf;
+
+ EndDo;
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC getCatalogueEntry;
+ DCL-PI *N IND;
+  pGUID CHAR(32) CONST;
+  pEntryDS LIKEDS(Catalogue_Entry_T);
+ END-PI;
+ //-------------------------------------------------------------------------
+
+ Exec SQL SELECT DESCRIPTION_SHORT, DESCRIPTION_LONG, USERNAME, USER_PASSWORD,
+                 URL, REMARKS, STAMP, LAST_USER
+            INTO :pEntryDS
+            FROM KEYSAFE.LINES_VIEW
+           WHERE LINK = :pGUID;
+ 
+ Return ( SQLCode = 0 );
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC loadCatalogieEntryToScreen;
+ DCL-PI *N;
+  pEntryDS LIKEDS(Catalogue_Entry_T) CONST;
+ END-PI;
+ //-------------------------------------------------------------------------
+
+ W6_Description_Short = pEntryDS.Description_Short;
+ W6_Description_Long = pEntryDS.Description_Long;
+ W6_UserName = pEntryDS.UserName;
+ W6_Password = pEntryDS.Password;
+ W6_URL = pEntryDS.URL;
+ W6_Remarks = pEntryDS.Remarks;
+ EvalR W6_Foot_Line = %Char(%Date(pEntryDS.Stamp) :*EUR.) + '-' + 
+                      %Char(%Time(pEntryDS.Stamp) :*HMS:) + '-' +
+                      %TrimR(pEntryDS.LastUser);
 
 END-PROC;
 
