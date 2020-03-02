@@ -24,11 +24,10 @@
 // This program stores different login data in different catalogues encrypted by db2
 //  crypto-services. Please also use telnet over tls :-)
 
-// CAUTION: IN WORK!
+// CAUTION: BETA
 
 // TO-DOs:
 //  + Delete catalogues
-//  + For the future maybe change masterpassword for a catalogue?
 //  + Clean up source
 
 
@@ -47,12 +46,7 @@ DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
 /INCLUDE KEYSAFE/QRPGLECPY,SYSTEM
 /INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
 /INCLUDE KEYSAFE/QRPGLECPY,QMHSNDPM
-
-/INCLUDE KEYSAFE/QRPGLECPY,BOOLIC
-/INCLUDE KEYSAFE/QRPGLECPY,HEX_COLORS
-
 /INCLUDE KEYSAFE/QRPGLECPY,KEYSAFE_H
-/INCLUDE KEYSAFE/QRPGLECPY,PSDS
 
 
 //#########################################################################
@@ -978,7 +972,8 @@ DCL-PROC deleteCatalogueEntry;
  ExFmt KEYSAFEW4;
 
  If Not WSDS.Cancel;
-   Exec SQL DELETE FROM KEYSAFE.MAIN WHERE LINK = :pGUID WITH CS;
+   Exec SQL DELETE FROM KEYSAFE.MAIN
+             WHERE MAIN_INDEX = :This.CatalogueGUID AND LINK = :pGUID WITH CS;
    If ( SQLCode <> 0 );
      Exec SQL GET DIAGNOSTICS CONDITION 1 :ErrorMessage = MESSAGE_TEXT;
      sendMessageToDisplay('E999999' :ErrorMessage :PgmQueue :CallStack);
