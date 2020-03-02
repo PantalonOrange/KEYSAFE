@@ -2,7 +2,7 @@
 
 ###### OSS-Project for IBMi
 
-This program stores different login data in different catalogues encrypted by db2 crypto-services. Please also use telnet over tls :-)
+This program stores different login data in different catalogues encrypted by db2 crypto-services (tdes-encryption). Please also use telnet over tls :-)
 
 To create this program plase create a new schema on your IBMi with the name "KEYSAFE".
 You need a journal and journalreceiver for the db2 crypt functions.
