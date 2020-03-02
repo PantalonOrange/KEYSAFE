@@ -1051,8 +1051,9 @@ DCL-PROC getCatalogueEntry;
  END-PI;
  //-------------------------------------------------------------------------
 
- Exec SQL SELECT DESCRIPTION_SHORT, DESCRIPTION_LONG, USERNAME, USER_PASSWORD,
-                 URL, REMARKS, STAMP, LAST_USER
+ Exec SQL SELECT IFNULL(DESCRIPTION_SHORT, ''), IFNULL(DESCRIPTION_LONG, ''), 
+                 IFNULL(USERNAME, ''), IFNULL(USER_PASSWORD, ''),
+                 IFNULL(URL, ''), IFNULL(REMARKS, ''), STAMP, LAST_USER
             INTO :pEntryDS
             FROM KEYSAFE.LINES_VIEW
            WHERE LINK = :pGUID;
