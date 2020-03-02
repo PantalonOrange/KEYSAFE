@@ -121,7 +121,8 @@
 
                   W0CCATL       10A  O  2  2MSGID(L000000 *LIBL/KEYMSGF)
                   W0CPASS       10A  O  4  2MSGID(L000001 *LIBL/KEYMSGF)
-                  W0CLINE       74A  O  5  2COLOR(BLU) DSPATR(UL)
+                  W0CLINE       74A  O  5  2ALIAS(W0_FOOT_LINE)
+                                            COLOR(BLU) DSPATR(UL)
                   W0CFOOT       74A  O  6  2MSGID(F000001 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
@@ -135,7 +136,7 @@
       **************************************************************************
                 R KEYSAFEW1                 TEXT('Window - Set masterpassword')
                                             OVERLAY
-                                            WINDOW(9 27 07 76 *NOMSGLIN)
+                                            WINDOW(9 27 08 76 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR GRN))
                                             WDWTITLE((*TEXT &W1TITL) +
@@ -157,16 +158,19 @@
 
                   W1C1PWD       10A  O  2  2MSGID(L000001 *LIBL/KEYMSGF)
                   W1C2PWD       10A  O  4  2MSGID(L000002 *LIBL/KEYMSGF)
-                  W1CLINE       74A  O  5  2COLOR(BLU) DSPATR(UL)
-                  W1CFOOT       74A  O  6  2MSGID(F000002 *LIBL/KEYMSGF)
+                  W1CHINT        5A  O  5  2MSGID(L000010 *LIBL/KEYMSGF)
+                  W1CLINE       74A  O  6  2COLOR(BLU) DSPATR(UL)
+                  W1CFOOT       74A  O  7  2MSGID(F000002 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
                   W11PWD        60A  B  2 13ALIAS(W1_PASSWORD)
                                             CHECK(LC) DSPATR(ND)
                   W12PWD        60A  B  4 13ALIAS(W1_CHECK_PASSWORD)
                                             CHECK(LC) DSPATR(ND)
+                  W1HINT        60A  B  5 13COLOR(YLW) ALIAS(W1_PASSWORD_HINT)
+                                            CHECK(LC)
 
-        50        W1MESS        74A  O  7  2COLOR(WHT) ALIAS(W1_MESSAGE)
+        50        W1MESS        74A  O  8  2COLOR(WHT) ALIAS(W1_MESSAGE)
 
       **************************************************************************
                 R KEYSAFEW2S                TEXT('Window - Prompt catalogue')
@@ -216,7 +220,7 @@
       **************************************************************************
                 R KEYSAFEW3                 TEXT('Window - Create catalogue')
                                             OVERLAY
-                                            WINDOW(9 26 08 78 *NOMSGLIN)
+                                            WINDOW(9 26 09 78 *NOMSGLIN)
                                             WDWBORDER((*CHAR '        ') +
                                                       (*DSPATR RI) (*COLOR BLU))
                                             WDWTITLE((*TEXT &W3TITL) +
@@ -240,8 +244,9 @@
                   W3CDESC       12A  O  3  2MSGID(L000003 *LIBL/KEYMSGF)
                   W3C1PWD       12A  O  4  2MSGID(L000001 *LIBL/KEYMSGF)
                   W3C2PWD       12A  O  5  2MSGID(L000002 *LIBL/KEYMSGF)
-                  W3CLINE       74A  O  6  2COLOR(BLU) DSPATR(UL)
-                  W3CFOOT       74A  O  7  2MSGID(F000003 *LIBL/KEYMSGF)
+                  W3CHINT        5A  O  6  2MSGID(L000010 *LIBL/KEYMSGF)
+                  W3CLINE       74A  O  7  2COLOR(BLU) DSPATR(UL)
+                  W3CFOOT       74A  O  8  2MSGID(F000003 *LIBL/KEYMSGF)
                                             COLOR(BLU)
 
                   W3CATA        30A  B  2 15COLOR(YLW) ALIAS(W3_CATALOGUE_NAME)
@@ -252,8 +257,10 @@
                                             CHECK(LC) DSPATR(ND)
                   W32PWD        60A  B  5 15ALIAS(W3_CHECK_PASSWORD)
                                             CHECK(LC) DSPATR(ND)
+                  W3HINT        60A  B  6 15COLOR(YLW) ALIAS(W3_PASSWORD_HINT)
+                                            CHECK(LC)
 
-        50        W3MESS        74A  O  8  2COLOR(WHT) ALIAS(W3_MESSAGE)
+        50        W3MESS        74A  O  9  2COLOR(WHT) ALIAS(W3_MESSAGE)
 
       **************************************************************************
                 R KEYSAFEW4                 TEXT('Window - Confirm delete')

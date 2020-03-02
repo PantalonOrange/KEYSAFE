@@ -349,6 +349,7 @@ DCL-PROC setCatalogue;
  DCL-PI *N IND END-PI;
 
  DCL-S Success IND INZ(TRUE);
+ DCL-S PasswordHint CHAR(60) INZ;
  //-------------------------------------------------------------------------
 
  WSDS.WindowShowMessage = FALSE;
@@ -419,6 +420,7 @@ DCL-PROC setCatalogue;
          Iter;
 
        Other;
+         Clear W0_Foot_Line;
          Exec SQL SELECT '0' INTO :Success FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue AND KEYTEST IS NULL;
          If Not Success;
@@ -433,9 +435,10 @@ DCL-PROC setCatalogue;
          EndIf;
 
          Exec SQL SELECT IFNULL(CATALOGUE_NAME, ''), IFNULL(GUID, ''),
+                         IFNULL(GETHINT(KEYTEST), ''),
                          CASE WHEN DECRYPT_CHAR(KEYTEST) = '1' THEN '1'
                               ELSE '0' END
-                    INTO :This.CatalogueName, :This.CatalogueGUID, :Success
+                    INTO :This.CatalogueName, :This.CatalogueGUID, :PasswordHint, :Success
                     FROM KEYSAFE.CATALOGUES
                    WHERE CATALOGUE_NAME = :W0_Catalogue;
          Success = Success And ( SQLCode = 0 );
@@ -445,6 +448,9 @@ DCL-PROC setCatalogue;
            W0_Current_Column = 13;
            Exec SQL GET DIAGNOSTICS CONDITION 1 :W0_Message = MESSAGE_TEXT;
            WSDS.WindowShowMessage = TRUE;
+           If ( PasswordHint <> '' );
+             EvalR W0_Foot_Line = %TrimR(PasswordHint);
+           EndIf;
            Iter;
 
          ElseIf Not Success And ( SQLCode = 0 );
@@ -452,6 +458,9 @@ DCL-PROC setCatalogue;
            W0_Current_Column = 13;
            W0_Message = retrieveMessageText('E000001');
            WSDS.WindowShowMessage = TRUE;
+           If ( PasswordHint <> '' );
+             EvalR W0_Foot_Line = %TrimR(PasswordHint);
+           EndIf;
            Iter;
 
          ElseIf Success;
@@ -522,10 +531,11 @@ DCL-PROC setCataloguePassword;
          Iter;
 
        Other;
-         Exec SQL SET ENCRYPTION PASSWORD = :W1_Password;
+         Exec SQL SET ENCRYPTION PASSWORD = :W1_Password WITH HINT :W1_Password_Hint;
          Clear W1_Password;
          Clear W1_Check_Password;
-         Exec SQL UPDATE KEYSAFE.CATALOGUES SET KEYTEST = ENCRYPT_TDES('1')
+         Exec SQL UPDATE KEYSAFE.CATALOGUES 
+                       SET KEYTEST = ENCRYPT_TDES('1')
                      WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL WITH NC;
          Success = Success And ( SQLCode = 0 );
 
@@ -704,7 +714,7 @@ DCL-PROC createNewCatalogue;
          Iter;
 
        Other;
-         Exec SQL SET ENCRYPTION PASSWORD = :W3_Password;
+         Exec SQL SET ENCRYPTION PASSWORD = :W3_Password WITH HINT :W3_Password_Hint;
          Clear W3_Password;
          Clear W3_Check_Password;
          Exec SQL INSERT INTO KEYSAFE.CATALOGUES
