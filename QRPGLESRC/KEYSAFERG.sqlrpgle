@@ -339,7 +339,7 @@ END-PROC;
 
 
 //**************************************************************************
-// This procedure checks the password and set this value as the new 
+// This procedure checks the password and set this value as the new
 //  encryption password used for the selected catalogue
 DCL-PROC setCatalogue;
  DCL-PI *N IND END-PI;
@@ -367,6 +367,9 @@ DCL-PROC setCatalogue;
    If WSDS.Exit;
      Clear KEYSAFEW0;
      Success = FALSE;
+     If ( This.CatalogueName <> '' );
+       This.PictureControl = FM_End;
+     EndIf;
      Leave;
 
    ElseIf WSDS.SearchEntry;
@@ -516,6 +519,13 @@ DCL-PROC setCataloguePassword;
          W1_Current_Row = 4;
          W1_Current_Column = 13;
          W1_Message = retrieveMessageText('E000001');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+        
+       When ( %Len(%TrimR(W1_Password)) < 6 );
+         W1_Current_Row = 2;
+         W1_Current_Column = 13;
+         W1_Message = retrieveMessageText('E000006');
          WSDS.WindowShowMessage = TRUE;
          Iter;
 
@@ -707,6 +717,13 @@ DCL-PROC createNewCatalogue;
          W3_Current_Row = 5;
          W3_Current_Column = 15;
          W3_Message = retrieveMessageText('E000001');
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+
+       When ( %Len(%TrimR(W3_Password)) < 6 );
+         W3_Current_Row = 4;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText('E000006');
          WSDS.WindowShowMessage = TRUE;
          Iter;
 
