@@ -19,10 +19,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Created by BRC on 13.02.2020
+// Created by BRC on 13.02.2020 - 03.03.2020
 
 // This program stores different login data in different catalogues encrypted by db2
-//  crypto-services. Please also use telnet over tls :-)
+//  crypto-services. Please use telnet over tls for secure communication :-)
+
+// This program need database journal for commitment control and db2 crypto services!
 
 // CAUTION: BETA
 
@@ -42,10 +44,10 @@ DCL-F KEYSAFEDF WORKSTN INDDS(WSDS) EXTFILE('KEYSAFEDF') ALIAS USROPN
 DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
 
 
+/INCLUDE KEYSAFE/QRPGLECPY,KEYSAFE_H
 /INCLUDE KEYSAFE/QRPGLECPY,SYSTEM
 /INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
 /INCLUDE KEYSAFE/QRPGLECPY,QMHSNDPM
-/INCLUDE KEYSAFE/QRPGLECPY,KEYSAFE_H
 
 
 //#########################################################################
@@ -97,9 +99,6 @@ END-PROC;
 
 //**************************************************************************
 DCL-PROC loopFM_A;
-
- DCL-DS FMA LIKEREC(KEYSAFEAC :*ALL) INZ;
- //-------------------------------------------------------------------------
 
  Exec SQL SAVEPOINT FM_A ON ROLLBACK RETAIN CURSORS;
 
@@ -199,6 +198,8 @@ DCL-PROC initFM_A;
 
 END-PROC;
 //**************************************************************************
+// This procedure reads the catalogue entries over the view to decrypt the
+//  values with the encryption password
 DCL-PROC fetchRecordsFM_A;
 
  DCL-S Success IND INZ(TRUE);
@@ -206,16 +207,16 @@ DCL-PROC fetchRecordsFM_A;
  DCL-S SearchRemarks CHAR(128) INZ;
 
  DCL-DS ResultDS QUALIFIED INZ;
-   Link CHAR(32);
-   Description_Short CHAR(30);
-   Remarks CHAR(80);
+  Link CHAR(32);
+  Description_Short CHAR(30);
+  Remarks CHAR(80);
  END-DS;
 
  DCL-DS SubfileDS QUALIFIED INZ;
-   Color1 CHAR(1);
-   Description_Short CHAR(30);
-   Color2 CHAR(2);
-   Remarks CHAR(80);
+  Color1 CHAR(1);
+  Description_Short CHAR(30);
+  Color2 CHAR(2);
+  Remarks CHAR(80);
  END-DS;
  //-------------------------------------------------------------------------
 
@@ -338,6 +339,8 @@ END-PROC;
 
 
 //**************************************************************************
+// This procedure checks the password and set this value as the new 
+//  encryption password used for the selected catalogue
 DCL-PROC setCatalogue;
  DCL-PI *N IND END-PI;
 
@@ -475,7 +478,7 @@ END-PROC;
 //**************************************************************************
 DCL-PROC setCataloguePassword;
  DCL-PI *N IND;
-   pCatalogueName CHAR(30) CONST;
+  pCatalogueName CHAR(30) CONST;
  END-PI;
 
  DCL-S Success IND INZ(TRUE);
@@ -591,7 +594,7 @@ DCL-PROC searchCatalogue;
    Exec SQL OPEN C_CATALOGUE_SEARCH;
 
    DoW ( This.Loop );
-     Exec SQL FETCH NEXT FROM C_CATALOGUE_SEARCH 
+     Exec SQL FETCH NEXT FROM C_CATALOGUE_SEARCH
                INTO :W2S_Subfile_Line, :W2S_Catalogue_Name, :W2S_GUID;
      If ( SQLCode = 100 ) Or ( W2C_RecordNumber = 9999 );
        Exec SQL CLOSE C_CATALOGUE_SEARCH;
@@ -624,7 +627,7 @@ DCL-PROC searchCatalogue;
      ElseIf ( W2S_Option = '1' );
        Catalogue_Name = W2S_Catalogue_Name;
        Leave;
-     
+
      ElseIf ( W2S_Option = '4' );
        If deleteCatalogue(W2S_Catalogue_Name :W2S_GUID);
          Leave;
@@ -803,25 +806,25 @@ DCL-PROC deleteCatalogue;
    Else;
 
      Select;
-     
+
      When ( W7_Password = '' );
        W7_Current_Row = 4;
        W7_Current_Column = 13;
        W7_Message = retrieveMessageText('E000001');
        WSDS.WindowShowMessage = TRUE;
-       
+
      When ( W7_Check_Password = '' );
        W7_Current_Row = 5;
        W7_Current_Column = 13;
        W7_Message = retrieveMessageText('E000001');
        WSDS.WindowShowMessage = TRUE;
-       
+
      When ( W7_Password <> W7_Check_Password );
        W7_Current_Row = 4;
        W7_Current_Column = 13;
        W7_Message = retrieveMessageText('E000002');
        WSDS.WindowShowMessage = TRUE;
-       
+
      Other;
        Exec SQL SET ENCRYPTION PASSWORD = :W7_Password;
        Clear W7_Password;
@@ -834,7 +837,7 @@ DCL-PROC deleteCatalogue;
          W7_Message = retrieveMessageText('E000001');
          WSDS.WindowShowMessage = TRUE;
        Else;
-      
+
          Exec SQL DELETE FROM KEYSAFE.MAIN WHERE MAIN_INDEX = :pGUID WITH NC;
          If ( SQLCode = 0 ) Or ( SQLCode = 100 );
            Exec SQL DELETE FROM KEYSAFE.CATALOGUES WHERE GUID = :pGUID WITH NC;
@@ -850,15 +853,15 @@ DCL-PROC deleteCatalogue;
            WSDS.WindowShowMessage = TRUE;
            Iter;
          EndIf;
-      
+
        EndIf;
 
      EndSl;
-   
+
    EndIf;
 
  EndDo;
- 
+
  Return Success;
 
 END-PROC;
@@ -1152,6 +1155,7 @@ END-PROC;
 
 
 //**************************************************************************
+// This procedure read the single entry record with the decryption view
 DCL-PROC getCatalogueEntry;
  DCL-PI *N IND;
   pGUID CHAR(32) CONST;
@@ -1229,10 +1233,10 @@ END-PROC;
 //**************************************************************************
 DCL-PROC sendMessageToDisplay;
  DCL-PI *N;
-   pMessageID CHAR(7) CONST;
-   pMessage CHAR(256) CONST;
-   pProgramQueue CHAR(10) CONST;
-   pCallStack INT(10) CONST;
+  pMessageID CHAR(7) CONST;
+  pMessage CHAR(256) CONST;
+  pProgramQueue CHAR(10) CONST;
+  pCallStack INT(10) CONST;
  END-PI;
 
  DCL-DS MessageDS LIKEDS(MessageHandling_T) INZ;
@@ -1250,8 +1254,8 @@ END-PROC;
 //**************************************************************************
 DCL-PROC sendStatus;
  DCL-PI *N;
-   pMessageID CHAR(7) CONST;
-   pMessage CHAR(256) CONST;
+  pMessageID CHAR(7) CONST;
+  pMessage CHAR(256) CONST;
  END-PI;
 
  DCL-DS MessageDS LIKEDS(MessageHandling_T) INZ;
@@ -1304,8 +1308,8 @@ END-PROC;
 //**************************************************************************
 DCL-PROC retrieveMessageText;
  DCL-PI *N CHAR(256);
-   pMessageID CHAR(7) CONST;
-   pMessageData CHAR(16) CONST OPTIONS(*NOPASS);
+  pMessageID CHAR(7) CONST;
+  pMessageData CHAR(16) CONST OPTIONS(*NOPASS);
  END-PI;
 
  /INCLUDE KEYSAFE/QRPGLECPY,QMHRTVM
