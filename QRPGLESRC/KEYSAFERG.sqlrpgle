@@ -628,6 +628,7 @@ DCL-PROC searchCatalogue;
      W2S_RecordNumber = W2C_RecordNumber;
      W2S_Subfile_Line = retrieveMessageText('M000005');
      WSDS.ShowSubfileOption = FALSE;
+     Write KEYSAFEW2S;
    Else;
      W2C_RecordNumber = 1;
    EndIf;
