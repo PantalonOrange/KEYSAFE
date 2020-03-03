@@ -176,12 +176,13 @@
                 R KEYSAFEW2S                TEXT('Window - Prompt catalogue')
                                             SFL
 
-                  W2SOPTI        1A  B  2  2VALUES(' ' '1')
+                  W2SOPTI        1A  B  2  2VALUES(' ' '1' '4')
                                             ALIAS(W2S_OPTION)
                                             DSPATR(UL) COLOR(TRQ) CHECK(ER)
                   W2SLINE       30A  O  2  4ALIAS(W2S_SUBFILE_LINE)
                   W2SRECN        4  0H      ALIAS(W2S_RECORDNUMBER)
                   W2SNAME       32A  H      ALIAS(W2S_CATALOGUE_NAME)
+                  W2SGUID       32A  H      ALIAS(W2S_GUID)
 
       **************************************************************************
                 R KEYSAFEW2C                TEXT('Window - Prompt catalogues')
@@ -348,12 +349,52 @@
         49                                  DSPATR(ND)
                   W6UURL       248A  B 14  2ALIAS(W6_URL)
                                             CHECK(LC) COLOR(YLW) CNTFLD(124)
+        48                                  DSPATR(PR)
                   W6REMA       620A  B 17  2ALIAS(W6_REMARKS)
                                             CHECK(LC) COLOR(YLW) CNTFLD(124)
         48                                  DSPATR(PR)
 
         50        W6MESS       124A  O 24  2COLOR(WHT) ALIAS(W6_MESSAGE)
 
+      **************************************************************************
+                R KEYSAFEW7                 TEXT('Window - Confirm catal.del')
+                                            OVERLAY
+                                            WINDOW(9 27 08 76 *NOMSGLIN)
+                                            WDWBORDER((*CHAR '        ') +
+                                                      (*DSPATR RI) (*COLOR RED))
+                                            WDWTITLE((*TEXT &W7TITL) +
+                                                      (*DSPATR RI) (*COLOR RED))
+                                            CA12(12)
+                                            CSRLOC(W7CROW W7CCOL)
+                                            RTNCSRLOC(*MOUSE &W7CROW &W7CCOL)
+                                            RTNCSRLOC(&W7CRCD &W7CFLD &W7CPOS)
+                                            HLPTITLE('Delete catalogue')
+                H                           HLPPNLGRP('KEYSAFEW7' KEYHLP)
+                                            HLPARA(*RCD)
+
+                  W7TITL        60A  P      ALIAS(W7_WINDOW_TITLE)
+                  W7CROW         3S 0H      ALIAS(W7_CURRENT_ROW)
+                  W7CCOL         3S 0H      ALIAS(W7_CURRENT_COLUMN)
+                  W7CRCD        10A  H      ALIAS(W7_CURRENT_RECORD)
+                  W7CFLD        10A  H      ALIAS(W7_CURRENT_FIELD)
+                  W7CPOS         4S 0H      ALIAS(W7_CURRENT_POSITION)
+
+                  W7CTXT1       74A  O  2  2MSGID(C000009 *LIBL/KEYMSGF)
+                                            COLOR(RED) DSPATR(BL)
+                  W7CTXT2       10A  O  3  2MSGID(L000000 *LIBL/KEYMSGF)
+                  W7CCATA       30A  O  3 13ALIAS(W7_CATALOGUE) COLOR(RED)
+                  W7C1PWD       10A  O  4  2MSGID(L000001 *LIBL/KEYMSGF)
+                  W7C2PWD       10A  O  5  2MSGID(L000002 *LIBL/KEYMSGF)
+                  W1CLINE       74A  O  6  2COLOR(BLU) DSPATR(UL)
+                  W1CFOOT       74A  O  7  2MSGID(F000003 *LIBL/KEYMSGF)
+                                            COLOR(BLU)
+
+                  W71PWD        60A  B  4 13ALIAS(W7_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
+                  W72PWD        60A  B  5 13ALIAS(W7_CHECK_PASSWORD)
+                                            CHECK(LC) DSPATR(ND)
+
+        50        W7MESS        74A  O  8  2COLOR(WHT) ALIAS(W7_MESSAGE)
 
       **************************************************************************
                 R KEYSAFEZS                 TEXT('Messagesubfile')

@@ -27,7 +27,6 @@
 // CAUTION: BETA
 
 // TO-DOs:
-//  + Delete catalogues
 //  + Clean up source
 
 
@@ -567,12 +566,12 @@ DCL-PROC searchCatalogue;
  //-------------------------------------------------------------------------
 
  Clear KEYSAFEW2C;
- Clear KEYSAFEW2S;
 
  W2C_Window_Title = retrieveMessageText('W000002');
 
  DoW ( This.Loop );
 
+   Clear KEYSAFEW2S;
    Reset W2C_RecordNumber;
 
    WSDS.SubfileClear = TRUE;
@@ -587,12 +586,13 @@ DCL-PROC searchCatalogue;
    WSDS.SubfileMore = TRUE;
 
    Exec SQL DECLARE C_CATALOGUE_SEARCH SCROLL CURSOR FOR
-             SELECT DESCRIPTION, CATALOGUE_NAME FROM KEYSAFE.CATALOGUES
+             SELECT DESCRIPTION, CATALOGUE_NAME, GUID FROM KEYSAFE.CATALOGUES
               ORDER BY CATALOGUE_NAME;
    Exec SQL OPEN C_CATALOGUE_SEARCH;
 
    DoW ( This.Loop );
-     Exec SQL FETCH NEXT FROM C_CATALOGUE_SEARCH INTO :W2S_Subfile_Line, :W2S_Catalogue_Name;
+     Exec SQL FETCH NEXT FROM C_CATALOGUE_SEARCH 
+               INTO :W2S_Subfile_Line, :W2S_Catalogue_Name, :W2S_GUID;
      If ( SQLCode = 100 ) Or ( W2C_RecordNumber = 9999 );
        Exec SQL CLOSE C_CATALOGUE_SEARCH;
        Leave;
@@ -624,6 +624,13 @@ DCL-PROC searchCatalogue;
      ElseIf ( W2S_Option = '1' );
        Catalogue_Name = W2S_Catalogue_Name;
        Leave;
+     
+     ElseIf ( W2S_Option = '4' );
+       If deleteCatalogue(W2S_Catalogue_Name :W2S_GUID);
+         Leave;
+       Else;
+         Iter;
+       EndIf;
 
      EndIf;
 
@@ -756,6 +763,102 @@ DCL-PROC switchCatalogue;
    Success = FALSE;
  EndIf;
 
+ Return Success;
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC deleteCatalogue;
+ DCL-PI *N IND;
+  pCatalogueName CHAR(32) CONST;
+  pGUID CHAR(32) CONST;
+ END-PI;
+
+ DCL-S Success IND INZ(TRUE);
+ //-------------------------------------------------------------------------
+
+ Clear KEYSAFEW7;
+ WSDS.WindowShowMessage = FALSE;
+ W7_Window_Title = retrieveMessageText('W000007');
+ W7_Catalogue = pCatalogueName;
+ W7_Current_Row = 4;
+ W7_Current_Column = 13;
+
+ DoW ( This.Loop );
+
+   Write KEYSAFEW7;
+   ExFmt KEYSAFEW7;
+
+   W7_Current_Row -= 1;
+   W7_Current_Column -= 3;
+
+   Reset Success;
+   WSDS.WindowShowMessage = FALSE;
+
+   If WSDS.Cancel;
+     Success = FALSE;
+     Leave;
+
+   Else;
+
+     Select;
+     
+     When ( W7_Password = '' );
+       W7_Current_Row = 4;
+       W7_Current_Column = 13;
+       W7_Message = retrieveMessageText('E000001');
+       WSDS.WindowShowMessage = TRUE;
+       
+     When ( W7_Check_Password = '' );
+       W7_Current_Row = 5;
+       W7_Current_Column = 13;
+       W7_Message = retrieveMessageText('E000001');
+       WSDS.WindowShowMessage = TRUE;
+       
+     When ( W7_Password <> W7_Check_Password );
+       W7_Current_Row = 4;
+       W7_Current_Column = 13;
+       W7_Message = retrieveMessageText('E000002');
+       WSDS.WindowShowMessage = TRUE;
+       
+     Other;
+       Exec SQL SET ENCRYPTION PASSWORD = :W7_Password;
+       Clear W7_Password;
+       Clear W7_Check_Password;
+       Exec SQL SELECT CASE WHEN DECRYPT_CHAR(KEYTEST) = '1' THEN '1' ELSE '0' END INTO :Success
+                  FROM KEYSAFE.CATALOGUES WHERE GUID = :pGUID;
+       If ( SQLCode <> 0 ) Or Not Success;
+         W7_Current_Row = 4;
+         W7_Current_Column = 13;
+         W7_Message = retrieveMessageText('E000001');
+         WSDS.WindowShowMessage = TRUE;
+       Else;
+      
+         Exec SQL DELETE FROM KEYSAFE.MAIN WHERE MAIN_INDEX = :pGUID WITH NC;
+         If ( SQLCode = 0 ) Or ( SQLCode = 100 );
+           Exec SQL DELETE FROM KEYSAFE.CATALOGUES WHERE GUID = :pGUID WITH NC;
+           If ( SQLCode = 0 );
+             Leave;
+           Else;
+             Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
+             WSDS.WindowShowMessage = TRUE;
+             Iter;
+           EndIf;
+         Else;
+           Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
+           WSDS.WindowShowMessage = TRUE;
+           Iter;
+         EndIf;
+      
+       EndIf;
+
+     EndSl;
+   
+   EndIf;
+
+ EndDo;
+ 
  Return Success;
 
 END-PROC;
