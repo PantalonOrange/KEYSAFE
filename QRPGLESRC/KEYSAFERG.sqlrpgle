@@ -521,7 +521,7 @@ DCL-PROC setCataloguePassword;
          W1_Message = retrieveMessageText('E000001');
          WSDS.WindowShowMessage = TRUE;
          Iter;
-        
+
        When ( %Len(%TrimR(W1_Password)) < 6 );
          W1_Current_Row = 2;
          W1_Current_Column = 13;
@@ -541,8 +541,8 @@ DCL-PROC setCataloguePassword;
          Clear W1_Password;
          Clear W1_Check_Password;
          Exec SQL UPDATE KEYSAFE.CATALOGUES
-                       SET KEYTEST = ENCRYPT_TDES('1')
-                     WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL WITH NC;
+                     SET KEYTEST = ENCRYPT_TDES('1')
+                   WHERE CATALOGUE_NAME = :pCatalogueName AND KEYTEST IS NULL WITH NC;
          Success = Success And ( SQLCode = 0 );
 
          If Not Success And ( SQLCode <> 0 );
@@ -576,6 +576,7 @@ DCL-PROC searchCatalogue;
  DCL-PI *N CHAR(30) END-PI;
 
  DCL-S Catalogue_Name CHAR(32) INZ;
+ DCL-S SearchString CHAR(64) INZ;
  //-------------------------------------------------------------------------
 
  Clear KEYSAFEW2C;
@@ -598,8 +599,12 @@ DCL-PROC searchCatalogue;
    WSDS.SubfileDisplay = TRUE;
    WSDS.SubfileMore = TRUE;
 
+   SearchString = '%' + %TrimR(W2C_Search_Find) + '%';
+
    Exec SQL DECLARE C_CATALOGUE_SEARCH SCROLL CURSOR FOR
-             SELECT DESCRIPTION, CATALOGUE_NAME, GUID FROM KEYSAFE.CATALOGUES
+             SELECT IFNULL(DESCRIPTION, ''), CATALOGUE_NAME, GUID FROM KEYSAFE.CATALOGUES
+              WHERE UPPER(CATALOGUE_NAME) CONCAT UPPER(DESCRIPTION)
+                    LIKE RTRIM(UPPER(:SearchString))
               ORDER BY CATALOGUE_NAME;
    Exec SQL OPEN C_CATALOGUE_SEARCH;
 
@@ -613,13 +618,16 @@ DCL-PROC searchCatalogue;
 
      W2C_RecordNumber += 1;
      W2S_RecordNumber = W2C_RecordNumber;
+     WSDS.ShowSubfileOption = TRUE;
      Write KEYSAFEW2S;
 
    EndDo;
 
    If ( W2C_RecordNumber = 0 );
-     Clear W2S_Catalogue_Name;
-     Leave;
+     W2C_RecordNumber = 1;
+     W2S_RecordNumber = W2C_RecordNumber;
+     W2S_Subfile_Line = retrieveMessageText('M000005');
+     WSDS.ShowSubfileOption = FALSE;
    Else;
      W2C_RecordNumber = 1;
    EndIf;

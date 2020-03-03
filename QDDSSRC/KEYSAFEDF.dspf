@@ -176,10 +176,11 @@
                 R KEYSAFEW2S                TEXT('Window - Prompt catalogue')
                                             SFL
 
-                  W2SOPTI        1A  B  2  2VALUES(' ' '1' '4')
+                  W2SOPTI        1A  B  3  2VALUES(' ' '1' '4')
                                             ALIAS(W2S_OPTION)
-                                            DSPATR(UL) COLOR(TRQ) CHECK(ER)
-                  W2SLINE       30A  O  2  4ALIAS(W2S_SUBFILE_LINE)
+        40                                  DSPATR(UL) COLOR(TRQ) CHECK(ER)
+       N40                                  DSPATR(PR ND)
+                  W2SLINE       30A  O  3  4ALIAS(W2S_SUBFILE_LINE)
                   W2SRECN        4  0H      ALIAS(W2S_RECORDNUMBER)
                   W2SNAME       32A  H      ALIAS(W2S_CATALOGUE_NAME)
                   W2SGUID       32A  H      ALIAS(W2S_GUID)
@@ -200,7 +201,7 @@
                                             RTNCSRLOC(&W2CCRCD &W2CCFLD -
                                                       &W2CCPOS)
                                             SFLCTL(KEYSAFEW2S)
-                                            SFLPAG(5) SFLSIZ(6)
+                                            SFLPAG(4) SFLSIZ(5)
                                             SFLCSRRRN(&W2CCURC)
         30                                  SFLCLR
         31                                  SFLDSPCTL
@@ -215,8 +216,11 @@
                   W2CCFLD       10A  H      ALIAS(W2C_CURRENT_FIELD)
                   W2CCPOS        4S 0H      ALIAS(W2C_CURRENT_POSITION)
 
-                  W2CHEAD       34A  O  1  2MSGID(C000008 *LIBL/KEYMSGF)
+                  W2CHEAD       34A  O  2  2MSGID(C000008 *LIBL/KEYMSGF)
                                             COLOR(BLU) DSPATR(UL)
+
+                  W2CFIND       34   B  1  2ALIAS(W2C_SEARCH_FIND)
+                                            CHECK(LC) COLOR(YLW)
 
       **************************************************************************
                 R KEYSAFEW3                 TEXT('Window - Create catalogue')
