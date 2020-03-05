@@ -1,0 +1,50 @@
+             PGM
+
+             DCLPRCOPT  LOG(*NO) ALWRTVSRC(*NO) USRPRF(*OWNER) +
+                          AUT(*USE) STGMDL(*SNGLVL) DFTACTGRP(*NO) +
+                          ACTGRP(*NEW)
+             COPYRIGHT  TEXT('COPYRIGHT 2020 CHRISTIAN BRUNNER')
+
+             DCL        VAR(&SRCLIB) TYPE(*CHAR) LEN(10) +
+                          VALUE('KEYSAFES')
+             DCL        VAR(&OBJLIB) TYPE(*CHAR) LEN(10) +
+                          VALUE('KEYSAFE')
+
+             CHKOBJ     OBJ(&OBJLIB) OBJTYPE(*LIB)
+             MONMSG     MSGID(CPF9801) EXEC(DO)
+             CRTLIB     LIB(&OBJLIB)
+             CRTJRNRCV  JRNRCV(&OBJLIB/KEYJRNR000) TEXT('Secure key +
+                          safe - journalreceiver')
+             CRTJRN     JRN(&OBJLIB/KEYJRN) +
+                          JRNRCV(&OBJLIB/KEYJRNR000) +
+                          MNGRCV(*SYSTEM) DLTRCV(*YES) TEXT('Secure +
+                          key safe - Journal')
+             ENDDO
+
+             RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(CATALOGUES) +
+                          USRPRF(*OWNER) DYNUSRPRF(*OWNER)
+             RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(MAIN) +
+                          USRPRF(*OWNER) DYNUSRPRF(*OWNER)
+             RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(LINES) +
+                          USRPRF(*OWNER) DYNUSRPRF(*OWNER)
+             RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(LINES_VW) +
+                          USRPRF(*OWNER) DYNUSRPRF(*OWNER)
+             RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(MAIN_LOOP) +
+                          USRPRF(*OWNER) DYNUSRPRF(*OWNER)
+             STRJRNPF   FILE(&OBJLIB/MAIN &OBJLIB/LINES) +
+                          JRN(&OBJLIB/KEYJRN) IMAGES(*BOTH) +
+                          OMTJRNE(*OPNCLO)
+
+             RSTOBJ     OBJ(KEYMSGF) SAVLIB(KEYSAFE) DEV(*SAVF) +
+                          SAVF(&SRCLIB/MSGF) RSTLIB(&OBJLIB)
+
+             CRTCMD     CMD(&OBJLIB/KEYSAFE) PGM(&OBJLIB/KEYSAFERG) +
+                          SRCFILE(&SRCLIB/QCMDSRC)
+             CRTDSPF    FILE(&OBJLIB/KEYSAFEDF) +
+                          SRCFILE(&SRCLIB/QDDSSRC) SRCMBR(KEYSAFEDF)
+             CRTSQLRPGI OBJ(&OBJLIB/KEYSAFERG) +
+                          SRCFILE(&SRCLIB/QRPGLESRC) COMMIT(*NONE) +
+                          RPGPPOPT(*LVL2) TGTRLS(*CURRENT) +
+                          CLOSQLCSR(*ENDACTGRP)
+
+             ENDPGM
