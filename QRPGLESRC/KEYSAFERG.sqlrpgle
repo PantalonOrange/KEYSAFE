@@ -42,8 +42,6 @@ DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
 
 /INCLUDE KEYSAFE/QRPGLEH,KEYSAFE_H
 
-/INCLUDE KEYSAFE/QRPGLECPY,MESSAGES
-
 /INCLUDE KEYSAFE/QRPGLECPY,SYSTEM
 /INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
 /INCLUDE KEYSAFE/QRPGLECPY,QMHSNDPM
@@ -233,21 +231,21 @@ DCL-PROC fetchRecordsFM_A;
  SearchRemarks = '%' + %TrimR(AC_Remark_Find) + '%';
 
  Exec SQL DECLARE c_main_entry_reader SCROLL CURSOR FOR
- 
-           SELECT main_loop.link, main_loop.description_short, 
+
+           SELECT main_loop.link, main_loop.description_short,
                   LEFT(IFNULL(main_loop.remarks, ''), 80)
              FROM keysafe.main_loop
             WHERE main_loop.main_index = :This.CatalogueGUID
               AND UPPER(main_loop.description_short) LIKE RTRIM(UPPER(:SearchDescriptionShort))
               AND UPPER(IFNULL(main_loop.remarks, '')) LIKE RTRIM(UPPER(:SearchRemarks))
             ORDER BY main_loop.description_short;
-            
+
  Exec SQL OPEN c_main_entry_reader;
 
  DoW ( This.Loop );
 
    Exec SQL FETCH NEXT FROM c_main_entry_reader INTO :ResultDS;
-   
+
    If ( SQLCode = 100 ) Or ( AC_RecordNumber = MAX_RECORDS );
      Exec SQL CLOSE c_main_entry_reader;
      Leave;
@@ -317,7 +315,7 @@ DCL-PROC checkFM_A;
    EndIf;
 
    Select;
-     
+
      When ( AS_Option = '' );
        Iter;
 
@@ -396,12 +394,12 @@ DCL-PROC setCatalogue;
        Clear KEYSAFEW0;
        Success = FALSE;
        Leave;
-       
+
      Else;
        W0_Message = retrieveMessageText(MESSAGE_CANCEL_NOT_ALLOWED);
        WSDS.WindowShowMessage = TRUE;
        Iter;
-       
+
      EndIf;
 
    Else;
@@ -425,22 +423,22 @@ DCL-PROC setCatalogue;
        Other;
          Clear W0_Foot_Line;
          Exec SQL SELECT '0' INTO :Success FROM keysafe.catalogues
-                   WHERE catalogues.catalogue_name = :W0_Catalogue 
+                   WHERE catalogues.catalogue_name = :W0_Catalogue
                      AND catalogues.keytest IS NULL;
-                     
+
          If Not Success;
-         
+
            If Not setCataloguePassword(W0_Catalogue);
              W0_Message = retrieveMessageText(ERROR_MISSING_PWD);
              WSDS.WindowShowMessage = TRUE;
              Iter;
-             
+
            EndIf;
-           
+
          Else;
            Exec SQL SET ENCRYPTION PASSWORD = :W0_Password;
            Clear W0_Password;
-           
+
          EndIf;
 
          Exec SQL SELECT IFNULL(catalogues.catalogue_name, ''),
@@ -450,7 +448,7 @@ DCL-PROC setCatalogue;
                     INTO :This.CatalogueName, :This.CatalogueGUID, :PasswordHint, :Success
                     FROM keysafe.catalogues
                    WHERE catalogues.catalogue_name = :W0_Catalogue;
-                   
+
          Success = Success And ( SQLCode = 0 );
 
          If Not Success And ( SQLCode <> 0 );
@@ -551,15 +549,15 @@ DCL-PROC setCataloguePassword;
 
        Other;
          Exec SQL SET ENCRYPTION PASSWORD = :W1_Password WITH HINT :W1_Password_Hint;
-         
+
          Clear W1_Password;
          Clear W1_Check_Password;
-         
+
          Exec SQL UPDATE keysafe.catalogues
                      SET catalogues.keytest = ENCRYPT_TDES('1')
                    WHERE catalogues.catalogue_name = :pCatalogueName
                      AND catalogues.keytest IS NULL WITH NC;
-                     
+
          Success = Success And ( SQLCode = 0 );
 
          If Not Success And ( SQLCode <> 0 );
@@ -619,21 +617,21 @@ DCL-PROC searchCatalogue;
    SearchString = '%' + %TrimR(W2C_Search_Find) + '%';
 
    Exec SQL DECLARE c_catalogue_search_reader SCROLL CURSOR FOR
-   
-             SELECT IFNULL(catalogues.description, ''), catalogues.catalogue_name, 
+
+             SELECT IFNULL(catalogues.description, ''), catalogues.catalogue_name,
                     catalogues.guid
                FROM keysafe.catalogues
               WHERE UPPER(catalogues.catalogue_name) CONCAT UPPER(catalogues.description)
                     LIKE RTRIM(UPPER(:SearchString))
               ORDER BY catalogues.catalogue_name;
-              
+
    Exec SQL OPEN c_catalogue_search_reader;
 
    DoW ( This.Loop );
-   
+
      Exec SQL FETCH NEXT FROM c_catalogue_search_reader
                INTO :W2S_Subfile_Line, :W2S_Catalogue_Name, :W2S_GUID;
-               
+
      If ( SQLCode = 100 ) Or ( W2C_RecordNumber = 9999 );
        Exec SQL CLOSE c_catalogue_search_reader;
        Leave;
@@ -673,10 +671,10 @@ DCL-PROC searchCatalogue;
      ElseIf ( W2S_Option = '4' );
        If deleteCatalogue(W2S_Catalogue_Name :W2S_GUID);
          Leave;
-         
+
        Else;
          Iter;
-         
+
        EndIf;
 
      EndIf;
@@ -685,13 +683,13 @@ DCL-PROC searchCatalogue;
 
    If WSDS.Exit Or WSDS.Cancel;
      Leave;
-     
+
    ElseIf WSDS.Refresh;
      Iter;
-     
+
    Else;
      Iter;
-     
+
    EndIf;
 
  EndDo;
@@ -773,16 +771,16 @@ DCL-PROC createNewCatalogue;
 
        Other;
          Exec SQL SET ENCRYPTION PASSWORD = :W3_Password WITH HINT :W3_Password_Hint;
-         
+
          Clear W3_Password;
          Clear W3_Check_Password;
-         
+
          Exec SQL INSERT INTO keysafe.catalogues
-                  (catalogues.catalogue_name, catalogues.guid, 
+                  (catalogues.catalogue_name, catalogues.guid,
                    catalogues.description, catalogues.keytest)
-                  VALUES(:W3_Catalogue_Name, CHAR(HEX(GUID())), RTRIM(:W3_Description),
-                         ENCRYPT_TDES('1')) WITH NC;
-                         
+                  VALUES(:W3_Catalogue_Name, KEYSAFE.GENERATE_GUID(),
+                         RTRIM(:W3_Description), ENCRYPT_TDES('1')) WITH NC;
+
          Success = Success And ( SQLCode = 0 );
 
          If Not Success And ( SQLCode <> 0 );
@@ -885,42 +883,42 @@ DCL-PROC deleteCatalogue;
 
      Other;
        Exec SQL SET ENCRYPTION PASSWORD = :W7_Password;
-       
+
        Clear W7_Password;
        Clear W7_Check_Password;
-       
-       Exec SQL SELECT CASE WHEN DECRYPT_CHAR(catalogues.keytest) = '1' THEN '1' 
+
+       Exec SQL SELECT CASE WHEN DECRYPT_CHAR(catalogues.keytest) = '1' THEN '1'
                             ELSE '0' END INTO :Success
                   FROM keysafe.catalogues
                  WHERE catalogues.guid = :pGUID;
-                 
+
        If ( SQLCode <> 0 ) Or Not Success;
          W7_Current_Row = 4;
          W7_Current_Column = 13;
          W7_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
          WSDS.WindowShowMessage = TRUE;
-         
+
        Else;
 
          Exec SQL DELETE FROM keysafe.main WHERE main.main_index = :pGUID WITH NC;
-         
+
          If ( SQLCode = 0 ) Or ( SQLCode = 100 );
            Exec SQL DELETE FROM keysafe.catalogues WHERE catalogues.guid = :pGUID WITH NC;
            If ( SQLCode = 0 );
              Leave;
-             
+
            Else;
              Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
              WSDS.WindowShowMessage = TRUE;
              Iter;
 
            EndIf;
-           
+
          Else;
            Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
            WSDS.WindowShowMessage = TRUE;
            Iter;
-           
+
          EndIf;
 
        EndIf;
@@ -998,14 +996,14 @@ DCL-PROC createNewCatalogueEntry;
 
      Exec SQL SELECT link INTO :GUID FROM FINAL TABLE
               (
-               INSERT INTO keysafe.main 
+               INSERT INTO keysafe.main
                 (main.main_index, main.link)
-                 VALUES(:This.CatalogueGUID, CHAR(HEX(GUID())))
+                 VALUES(:This.CatalogueGUID, KEYSAFE.GENERATE_GUID())
                ) WITH CS;
-               
+
      If ( SQLCode = 0 );
        Exec SQL INSERT INTO keysafe.lines
-                (lines.link, lines.description_short, lines.description_long, lines.username, 
+                (lines.link, lines.description_short, lines.description_long, lines.username,
                  lines.user_password, lines.url, lines.remarks)
                  VALUES(:GUID, ENCRYPT_TDES(RTRIM(:W6_Description_Short)),
                         ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Long), '')),
@@ -1015,16 +1013,16 @@ DCL-PROC createNewCatalogueEntry;
                         ENCRYPT_TDES(NULLIF(RTRIM(:W6_Remarks), '')))
                 WITH CS;
      EndIf;
-     
+
      If ( SQLCode <> 0 );
        Exec SQL GET DIAGNOSTICS CONDITION 1 :W6_Message = MESSAGE_TEXT;
        WSDS.WindowShowMessage = TRUE;
-       
+
      Else;
        Leave;
-       
+
      EndIf;
-     
+
    EndIf;
 
  EndDo;
@@ -1109,9 +1107,9 @@ DCL-PROC editCatalogueEntry;
        Or ( W6_URL <> EntryDS.URL )
        Or ( W6_Remarks <> EntryDS.Remarks );
        Exec SQL UPDATE keysafe.lines
-                   SET lines.description_short = 
+                   SET lines.description_short =
                         ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Short), '')),
-                       lines.description_long = 
+                       lines.description_long =
                         ENCRYPT_TDES(NULLIF(RTRIM(:W6_Description_Long), '')),
                        lines.username = ENCRYPT_TDES(NULLIF(RTRIM(:W6_UserName), '')),
                        lines.user_password = ENCRYPT_TDES(NULLIF(RTRIM(:W6_Password), '')),
@@ -1121,7 +1119,7 @@ DCL-PROC editCatalogueEntry;
                        lines.last_user = USER
                  WHERE lines.link = :pGUID
                   WITH CS;
-                  
+
        If ( SQLCode <> 0 );
          Exec SQL GET DIAGNOSTICS CONDITION 1 :W6_Message = MESSAGE_TEXT;
          WSDS.WindowShowMessage = TRUE;
@@ -1160,19 +1158,19 @@ DCL-PROC deleteCatalogueEntry;
  ExFmt KEYSAFEW4;
 
  If Not WSDS.Cancel;
- 
+
    Exec SQL DELETE FROM keysafe.main
-             WHERE main.main_index = :This.CatalogueGUID AND main.link = :pGUID 
+             WHERE main.main_index = :This.CatalogueGUID AND main.link = :pGUID
               WITH CS;
-             
+
    If ( SQLCode <> 0 );
      Exec SQL GET DIAGNOSTICS CONDITION 1 :ErrorMessage = MESSAGE_TEXT;
      sendMessageToDisplay(ERROR_INDIVIDUAL :ErrorMessage :PgmQueue :CallStack);
    EndIf;
-   
+
  Else;
    sendMessageToDisplay(MESSAGE_OPERATION_CANCELED :'' :PgmQueue :CallStack);
-   
+
  EndIf;
 
 END-PROC;
@@ -1253,7 +1251,7 @@ DCL-PROC getCatalogueEntry;
  Exec SQL SELECT IFNULL(lines_view.description_short, ''),
                  IFNULL(lines_view.description_long, ''),
                  IFNULL(lines_view.username, ''), IFNULL(lines_view.user_password, ''),
-                 IFNULL(lines_view.url, ''), IFNULL(lines_view.remarks, ''), 
+                 IFNULL(lines_view.url, ''), IFNULL(lines_view.remarks, ''),
                  lines_view.stamp, lines_view.last_user
             INTO :pEntryDS
             FROM keysafe.lines_view
@@ -1332,7 +1330,7 @@ DCL-PROC sendMessageToDisplay;
  //-------------------------------------------------------------------------
 
  MessageDS.Length = %Len(%TrimR(pMessage));
- 
+
  If ( pMessageID <> '' );
    sendProgramMessage(pMessageID :KEYMSGF :pMessage :MessageDS.Length :'*INFO'
                       :pProgramQueue :pCallStack :MessageDS.Key :MessageDS.Error);
@@ -1358,7 +1356,7 @@ DCL-PROC sendStatus;
  EndIf;
 
  MessageDS.Length = %Len(%TrimR(Message));
- 
+
  If ( pMessageID <> '' );
    sendProgramMessage(pMessageID :KEYMSGF :Message :MessageDS.Length
                       :'*STATUS' :'*EXT' :0 :MessageDS.Key :MessageDS.Error);
@@ -1377,7 +1375,7 @@ DCL-PROC sendJobLog;
  //-------------------------------------------------------------------------
 
  MessageDS.Length = %Len(%TrimR(pMessage));
- 
+
  If ( MessageDS.Length >= 0 );
    sendProgramMessage('CPF9897' :CPFMSG :pMessage :MessageDS.Length
                       :'*DIAG' :'*PGMBDY' :1 :MessageDS.Key :MessageDS.Error);
