@@ -419,7 +419,7 @@ DCL-PROC setCatalogue;
          W0_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
          WSDS.WindowShowMessage = TRUE;
          Iter;
-
+       
        Other;
          Clear W0_Foot_Line;
          Exec SQL SELECT '0' INTO :Success FROM keysafe.catalogues
@@ -733,6 +733,13 @@ DCL-PROC createNewCatalogue;
          W3_Message = retrieveMessageText(ERROR_CATALOGUE_NAME_MISSING);
          WSDS.WindowShowMessage = TRUE;
          Iter;
+       
+       When checkCatalogueName(W3_Catalogue_Name);
+         W3_Current_Row = 2;
+         W3_Current_Column = 15;
+         W3_Message = retrieveMessageText(ERROR_CATALOGUE_EXIST);
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
 
        When ( W3_Description = '' );
          W3_Current_Row = 3;
@@ -862,50 +869,64 @@ DCL-PROC deleteCatalogue;
    Else;
 
      Select;
-
-     When ( W7_Password = '' );
-       W7_Current_Row = 4;
-       W7_Current_Column = 13;
-       W7_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
-       WSDS.WindowShowMessage = TRUE;
-
-     When ( W7_Check_Password = '' );
-       W7_Current_Row = 5;
-       W7_Current_Column = 13;
-       W7_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
-       WSDS.WindowShowMessage = TRUE;
-
-     When ( W7_Password <> W7_Check_Password );
-       W7_Current_Row = 4;
-       W7_Current_Column = 13;
-       W7_Message = retrieveMessageText(ERROR_PWD_CHECK_NOT_MATCH);
-       WSDS.WindowShowMessage = TRUE;
-
-     Other;
-       Exec SQL SET ENCRYPTION PASSWORD = :W7_Password;
-
-       Clear W7_Password;
-       Clear W7_Check_Password;
-
-       Exec SQL SELECT CASE WHEN DECRYPT_CHAR(catalogues.keytest) = '1' THEN '1'
-                            ELSE '0' END INTO :Success
-                  FROM keysafe.catalogues
-                 WHERE catalogues.guid = :pGUID;
-
-       If ( SQLCode <> 0 ) Or Not Success;
+     
+       When Not checkCatalogueName(pCatalogueName);
+         W7_Current_Row = 4;
+         W7_Current_Column = 13;
+         W7_Message = retrieveMessageText(ERROR_CATALOGUE_NOT_EXIST);
+         WSDS.WindowShowMessage = TRUE;
+         Iter;
+       
+       When ( W7_Password = '' );
          W7_Current_Row = 4;
          W7_Current_Column = 13;
          W7_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
          WSDS.WindowShowMessage = TRUE;
 
-       Else;
+       When ( W7_Check_Password = '' );
+         W7_Current_Row = 5;
+         W7_Current_Column = 13;
+         W7_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
+         WSDS.WindowShowMessage = TRUE;
 
-         Exec SQL DELETE FROM keysafe.main WHERE main.main_index = :pGUID WITH NC;
+       When ( W7_Password <> W7_Check_Password );
+         W7_Current_Row = 4;
+         W7_Current_Column = 13;
+         W7_Message = retrieveMessageText(ERROR_PWD_CHECK_NOT_MATCH);
+         WSDS.WindowShowMessage = TRUE;
 
-         If ( SQLCode = 0 ) Or ( SQLCode = 100 );
-           Exec SQL DELETE FROM keysafe.catalogues WHERE catalogues.guid = :pGUID WITH NC;
-           If ( SQLCode = 0 );
-             Leave;
+       Other;
+         Exec SQL SET ENCRYPTION PASSWORD = :W7_Password;
+
+         Clear W7_Password;
+         Clear W7_Check_Password;
+
+         Exec SQL SELECT CASE WHEN DECRYPT_CHAR(catalogues.keytest) = '1' THEN '1'
+                              ELSE '0' END INTO :Success
+                    FROM keysafe.catalogues
+                   WHERE catalogues.guid = :pGUID;
+
+         If ( SQLCode <> 0 ) Or Not Success;
+           W7_Current_Row = 4;
+           W7_Current_Column = 13;
+           W7_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
+           WSDS.WindowShowMessage = TRUE;
+
+         Else;
+
+           Exec SQL DELETE FROM keysafe.main WHERE main.main_index = :pGUID WITH NC;
+
+           If ( SQLCode = 0 ) Or ( SQLCode = 100 );
+             Exec SQL DELETE FROM keysafe.catalogues WHERE catalogues.guid = :pGUID WITH NC;
+             If ( SQLCode = 0 );
+               Leave;
+
+             Else;
+               Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
+               WSDS.WindowShowMessage = TRUE;
+               Iter;
+
+             EndIf;
 
            Else;
              Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
@@ -914,14 +935,7 @@ DCL-PROC deleteCatalogue;
 
            EndIf;
 
-         Else;
-           Exec SQL GET DIAGNOSTICS CONDITION 1 :W7_Message = MESSAGE_TEXT;
-           WSDS.WindowShowMessage = TRUE;
-           Iter;
-
          EndIf;
-
-       EndIf;
 
      EndSl;
 
@@ -1278,6 +1292,26 @@ DCL-PROC loadCatalogieEntryToScreen;
  EvalR W6_Foot_Line = %Char(%Date(pEntryDS.Stamp) :*EUR.) + '-' +
                       %Char(%Time(pEntryDS.Stamp) :*HMS:) + '-' +
                       %TrimR(pEntryDS.LastUser);
+
+END-PROC;
+
+
+//**************************************************************************
+DCL-PROC checkCatalogueName;
+ DCL-PI *N IND;
+  pCatalogueName CHAR(30) CONST;
+ END-PI;
+
+ DCL-S RecordFound IND INZ(FALSE);
+ //-------------------------------------------------------------------------
+
+ Exec SQL SELECT '1' INTO :RecordFound
+            FROM keysafe.catalogues
+           WHERE catalogue_name = :pCatalogueName;
+           
+ RecordFound = RecordFound And ( SQLCode = 0 );
+ 
+ Return RecordFound;
 
 END-PROC;
 
