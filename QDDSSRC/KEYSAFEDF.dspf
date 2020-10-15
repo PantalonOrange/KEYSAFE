@@ -29,7 +29,7 @@
                   ASOPTI         1A  B 07 03COLOR(TRQ) CHECK(ER)
        N40                                  DSPATR(PR ND)
                                             ALIAS(AS_OPTION)
-                                            VALUES(' ' '1' '2' '4' '5')
+      *                                     VALUES(' ' '1' '2' '4' '5')
                   ASLINE       127A  O 07 05ALIAS(AS_SUBFILE_LINE)
 
                   ASRECN         6  0H      ALIAS(AS_RECORD_NUMBER)

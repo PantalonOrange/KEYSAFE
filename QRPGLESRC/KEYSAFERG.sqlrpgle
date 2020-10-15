@@ -230,7 +230,7 @@ DCL-PROC fetchRecordsFM_A;
  SearchDescriptionShort = '%' + %TrimR(AC_Entry_Find) + '%';
  SearchRemarks = '%' + %TrimR(AC_Remark_Find) + '%';
 
- Exec SQL DECLARE c_main_entry_reader SCROLL CURSOR FOR
+ Exec SQL DECLARE c_main_entry_reader CURSOR FOR
 
            SELECT main_loop.link, main_loop.description_short,
                   LEFT(IFNULL(main_loop.remarks, ''), 80)
@@ -419,7 +419,7 @@ DCL-PROC setCatalogue;
          W0_Message = retrieveMessageText(ERROR_PWD_EMPTY_WRONG);
          WSDS.WindowShowMessage = TRUE;
          Iter;
-       
+
        Other;
          Clear W0_Foot_Line;
          Exec SQL SELECT '0' INTO :Success FROM keysafe.catalogues
@@ -616,7 +616,7 @@ DCL-PROC searchCatalogue;
 
    SearchString = '%' + %TrimR(W2C_Search_Find) + '%';
 
-   Exec SQL DECLARE c_catalogue_search_reader SCROLL CURSOR FOR
+   Exec SQL DECLARE c_catalogue_search_reader CURSOR FOR
 
              SELECT IFNULL(catalogues.description, ''), catalogues.catalogue_name,
                     catalogues.guid
@@ -733,7 +733,7 @@ DCL-PROC createNewCatalogue;
          W3_Message = retrieveMessageText(ERROR_CATALOGUE_NAME_MISSING);
          WSDS.WindowShowMessage = TRUE;
          Iter;
-       
+
        When checkCatalogueName(W3_Catalogue_Name);
          W3_Current_Row = 2;
          W3_Current_Column = 15;
@@ -869,14 +869,14 @@ DCL-PROC deleteCatalogue;
    Else;
 
      Select;
-     
+
        When Not checkCatalogueName(pCatalogueName);
          W7_Current_Row = 4;
          W7_Current_Column = 13;
          W7_Message = retrieveMessageText(ERROR_CATALOGUE_NOT_EXIST);
          WSDS.WindowShowMessage = TRUE;
          Iter;
-       
+
        When ( W7_Password = '' );
          W7_Current_Row = 4;
          W7_Current_Column = 13;
@@ -1308,9 +1308,9 @@ DCL-PROC checkCatalogueName;
  Exec SQL SELECT '1' INTO :RecordFound
             FROM keysafe.catalogues
            WHERE catalogue_name = :pCatalogueName;
-           
+
  RecordFound = RecordFound And ( SQLCode = 0 );
- 
+
  Return RecordFound;
 
 END-PROC;
