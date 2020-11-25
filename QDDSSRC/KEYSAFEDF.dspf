@@ -58,6 +58,8 @@
                                             HLPARA(1 2 27 132)
 
                   ACCURC         5S 0H      ALIAS(AC_CURRENT_CURSOR)
+                  ACRECN         4S 0H      SFLRCDNBR(CURSOR)
+                                            ALIAS(AC_RECORD_NUMBER)
                   ACCROW         3S 0H      ALIAS(AC_CURRENT_ROW)
                   ACCCOL         3S 0H      ALIAS(AC_CURRENT_COLUMN)
                   ACCRCD        10A  H      ALIAS(AC_CURRENT_RECORD)

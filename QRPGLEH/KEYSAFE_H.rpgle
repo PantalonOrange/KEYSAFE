@@ -34,8 +34,7 @@ DCL-C FM_A 'A';
 DCL-C FM_END '*';
 DCL-C MAX_RECORDS 9999;
 
-DCL-S AC_RecordNumber UNS(10) INZ;
-DCL-S W2C_RecordNumber UNS(10) INZ;
+DCL-S W2C_Record_Number UNS(10) INZ;
 DCL-S PgmQueue CHAR(10) INZ('MAIN');
 DCL-S CallStack INT(10) INZ;
 

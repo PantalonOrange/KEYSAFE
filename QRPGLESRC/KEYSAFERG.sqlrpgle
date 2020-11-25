@@ -33,8 +33,8 @@ CTL-OPT MAIN(Main);
 
 
 DCL-F KEYSAFEDF WORKSTN INDDS(WSDS) EXTFILE('KEYSAFEDF') ALIAS USROPN
-                 SFILE(KEYSAFEAS :AC_RecordNumber)
-                 SFILE(KEYSAFEW2S :W2C_RecordNumber);
+                 SFILE(KEYSAFEAS :AC_Record_Number)
+                 SFILE(KEYSAFEW2S :W2C_Record_Number);
 
 
 DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
@@ -69,9 +69,12 @@ DCL-PROC Main;
        Monitor;
          loopFM_A();
          On-Error;
-           This.PictureControl = FM_END;
            sendJobLog(PSDS.MessageID + ':' + PSDS.MessageData);
-           Exec SQL ROLLBACK;
+           If checkForOpenCommits();
+             This.PictureControl = FM_END;
+           Else;
+             This.PictureControl = FM_A;
+           EndIf;
        EndMon;
 
      Other;
@@ -171,7 +174,7 @@ DCL-PROC initFM_A;
  DCL-S Success IND INZ(TRUE);
  //-------------------------------------------------------------------------
 
- Reset AC_RecordNumber;
+ Reset AC_Record_Number;
 
  If ( This.CatalogueName = '' );
    If Not setCatalogue();
@@ -218,7 +221,7 @@ DCL-PROC fetchRecordsFM_A;
  //-------------------------------------------------------------------------
 
  Clear KEYSAFEAS;
- Reset AC_RecordNumber;
+ Reset AC_Record_Number;
 
  WSDS.SubfileClear = FALSE;
  WSDS.SubfileDisplayControl = TRUE;
@@ -246,15 +249,15 @@ DCL-PROC fetchRecordsFM_A;
 
    Exec SQL FETCH NEXT FROM c_main_entry_reader INTO :ResultDS;
 
-   If ( SQLCode = 100 ) Or ( AC_RecordNumber = MAX_RECORDS );
+   If ( SQLCode = 100 ) Or ( AC_Record_Number = MAX_RECORDS );
      Exec SQL CLOSE c_main_entry_reader;
      Leave;
 
    ElseIf ( SQLCode <> 100 ) And ( SQLCode <> 0 );
      Exec SQL GET DIAGNOSTICS CONDITION 1 :AS_Subfile_Line = MESSAGE_TEXT;
      Exec SQL CLOSE c_main_entry_reader;
-     AC_RecordNumber += 1;
-     AS_Record_Number = AC_RecordNumber;
+     AC_Record_Number += 1;
+     AS_Record_Number = AC_Record_Number;
      WSDS.ShowSubfileOption = FALSE;
      Write KEYSAFEAS;
      Leave;
@@ -266,39 +269,39 @@ DCL-PROC fetchRecordsFM_A;
    SubfileDS.Color2 = COLOR_GRN;
    SubfileDS.Remarks = ResultDS.Remarks;
 
-   AC_RecordNumber += 1;
+   AC_Record_Number += 1;
    Clear AS_Option;
    AS_Subfile_Line = SubfileDS;
-   AS_Record_Number = AC_RecordNumber;
+   AS_Record_Number = AC_Record_Number;
    AS_Entry_GUID = ResultDS.Link;
    WSDS.ShowSubfileOption = TRUE;
    Write KEYSAFEAS;
 
  EndDo;
 
- If ( AC_RecordNumber = 0 ) And ( This.GlobalMessage = '' );
-   AC_RecordNumber = 1;
+ If ( AC_Record_Number = 0 ) And ( This.GlobalMessage = '' );
+   AC_Record_Number = 1;
    AC_Current_Row = 5;
    AC_Current_Column = 6;
    AS_Subfile_Line = COLOR_GRN + retrieveMessageText(MESSAGE_NO_RECORDS_FOUND);
-   AS_Record_Number = AC_RecordNumber;
+   AS_Record_Number = AC_Record_Number;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
- ElseIf ( AC_RecordNumber = 0 ) And ( This.GlobalMessage <> '' );
-   AC_RecordNumber = 1;
+ ElseIf ( AC_Record_Number = 0 ) And ( This.GlobalMessage <> '' );
+   AC_Record_Number = 1;
    AC_Current_Row = 5;
    AC_Current_Column = 6;
    AS_Subfile_Line = COLOR_WHT + This.GlobalMessage;
-   AS_Record_Number = AC_RecordNumber;
+   AS_Record_Number = AC_Record_Number;
    WSDS.ShowSubfileOption = FALSE;
    Write KEYSAFEAS;
 
  Else;
-   If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= AC_RecordNumber );
-     AC_RecordNumber = AC_Current_Cursor;
+   If ( AC_Current_Cursor > 0 ) And ( AC_Current_Cursor <= AC_Record_Number );
+     AC_Record_Number = AC_Current_Cursor;
    Else;
-     AC_RecordNumber = 1;
+     AC_Record_Number = 1;
    EndIf;
 
  EndIf;
@@ -601,7 +604,7 @@ DCL-PROC searchCatalogue;
  DoW ( This.Loop );
 
    Clear KEYSAFEW2S;
-   Reset W2C_RecordNumber;
+   Reset W2C_Record_Number;
 
    WSDS.SubfileClear = TRUE;
    WSDS.SubfileDisplayControl = TRUE;
@@ -632,26 +635,26 @@ DCL-PROC searchCatalogue;
      Exec SQL FETCH NEXT FROM c_catalogue_search_reader
                INTO :W2S_Subfile_Line, :W2S_Catalogue_Name, :W2S_GUID;
 
-     If ( SQLCode = 100 ) Or ( W2C_RecordNumber = 9999 );
+     If ( SQLCode = 100 ) Or ( W2C_Record_Number = 9999 );
        Exec SQL CLOSE c_catalogue_search_reader;
        Leave;
      EndIf;
 
-     W2C_RecordNumber += 1;
-     W2S_RecordNumber = W2C_RecordNumber;
+     W2C_Record_Number += 1;
+     W2S_RecordNumber = W2C_Record_Number;
      WSDS.ShowSubfileOption = TRUE;
      Write KEYSAFEW2S;
 
    EndDo;
 
-   If ( W2C_RecordNumber = 0 );
-     W2C_RecordNumber = 1;
-     W2S_RecordNumber = W2C_RecordNumber;
+   If ( W2C_Record_Number = 0 );
+     W2C_Record_Number = 1;
+     W2S_RecordNumber = W2C_Record_Number;
      W2S_Subfile_Line = retrieveMessageText(MESSAGE_NO_MATCHING_CATALOGUE_FOUND);
      WSDS.ShowSubfileOption = FALSE;
      Write KEYSAFEW2S;
    Else;
-     W2C_RecordNumber = 1;
+     W2C_Record_Number = 1;
    EndIf;
 
    Write KEYSAFEW2C;
