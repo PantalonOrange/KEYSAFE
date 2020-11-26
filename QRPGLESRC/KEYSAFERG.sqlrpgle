@@ -153,7 +153,7 @@ DCL-PROC loopFM_A;
 
      When WSDS.JumpBottom;
        initFM_A();
-       AC_Current_Cursor = MAX_RECORDS;
+       AC_Current_Cursor = This.RecordsFound;
        sendMessageToDisplay(STATUS_JUMP_BOTTOM :AS_Option :PgmQueue :CallStack);
 
      Other;
@@ -241,7 +241,8 @@ DCL-PROC fetchRecordsFM_A;
             WHERE main_loop.main_index = :This.CatalogueGUID
               AND UPPER(main_loop.description_short) LIKE RTRIM(UPPER(:SearchDescriptionShort))
               AND UPPER(IFNULL(main_loop.remarks, '')) LIKE RTRIM(UPPER(:SearchRemarks))
-            ORDER BY main_loop.description_short;
+            ORDER BY main_loop.description_short
+            LIMIT :MAX_RECORDS;
 
  Exec SQL OPEN c_main_entry_reader;
 
@@ -251,6 +252,7 @@ DCL-PROC fetchRecordsFM_A;
 
    If ( SQLCode = 100 ) Or ( AC_Record_Number = MAX_RECORDS );
      Exec SQL CLOSE c_main_entry_reader;
+     This.RecordsFound = AC_Record_Number;
      Leave;
 
    ElseIf ( SQLCode <> 100 ) And ( SQLCode <> 0 );
@@ -260,6 +262,7 @@ DCL-PROC fetchRecordsFM_A;
      AS_Record_Number = AC_Record_Number;
      WSDS.ShowSubfileOption = FALSE;
      Write KEYSAFEAS;
+     This.RecordsFound = AC_Record_Number;
      Leave;
 
    EndIf;
