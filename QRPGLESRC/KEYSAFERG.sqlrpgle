@@ -1,5 +1,5 @@
 **FREE
-// Copyright (c) 2020 Christian Brunner
+// Copyright (c) 2020, 2021 Christian Brunner
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,24 +27,7 @@
 // This program need database journal for commitment control and db2 crypto services!
 
 
-/INCLUDE KEYSAFE/QRPGLEH,COPYRIGHT
-/INCLUDE KEYSAFE/QRPGLEH,H_SPECS
-CTL-OPT MAIN(Main);
-
-
-DCL-F KEYSAFEDF WORKSTN INDDS(WSDS) EXTFILE('KEYSAFEDF') ALIAS USROPN
-                 SFILE(KEYSAFEAS :AC_Record_Number)
-                 SFILE(KEYSAFEW2S :W2C_Record_Number);
-
-
-DCL-PR Main EXTPGM('KEYSAFERG') END-PR;
-
-
 /INCLUDE KEYSAFE/QRPGLEH,KEYSAFE_H
-
-/INCLUDE KEYSAFE/QRPGLECPY,SYSTEM
-/INCLUDE KEYSAFE/QRPGLECPY,QUSCMDLN
-/INCLUDE KEYSAFE/QRPGLECPY,QMHSNDPM
 
 
 //#########################################################################
@@ -198,9 +181,9 @@ DCL-PROC initFM_A;
 
 END-PROC;
 //**************************************************************************
+DCL-PROC fetchRecordsFM_A;
 // This procedure reads the catalogue entries over the view to decrypt the
 //  values with the encryption password
-DCL-PROC fetchRecordsFM_A;
 
  DCL-S Success IND INZ(TRUE);
  DCL-S SearchDescriptionShort CHAR(60) INZ;
@@ -345,9 +328,9 @@ END-PROC;
 
 
 //**************************************************************************
+DCL-PROC setCatalogue;
 // This procedure checks the password and set this value as the new
 //  encryption password used for the selected catalogue
-DCL-PROC setCatalogue;
  DCL-PI *N IND END-PI;
 
  DCL-S Success IND INZ(TRUE);
@@ -453,7 +436,8 @@ DCL-PROC setCatalogue;
                          CASE WHEN DECRYPT_CHAR(catalogues.keytest) = '1' THEN '1' ELSE '0' END
                     INTO :This.CatalogueName, :This.CatalogueGUID, :PasswordHint, :Success
                     FROM keysafe.catalogues
-                   WHERE catalogues.catalogue_name = :W0_Catalogue;
+                   WHERE catalogues.catalogue_name = :W0_Catalogue
+                     AND IFNULL(catalogues.only_current_user, SESSION_USER) = SESSION_USER;
 
          Success = Success And ( SQLCode = 0 );
 
@@ -494,9 +478,9 @@ END-PROC;
 
 
 //**************************************************************************
+DCL-PROC setCataloguePassword;
 // If the selected catalogue has no password this procedure will be called
 //  to set a new password
-DCL-PROC setCataloguePassword;
  DCL-PI *N IND;
   pCatalogueName CHAR(30) CONST;
  END-PI;
@@ -597,6 +581,7 @@ DCL-PROC searchCatalogue;
  DCL-PI *N CHAR(30) END-PI;
 
  DCL-S Catalogue_Name CHAR(32) INZ;
+ DCL-S PrivateFlag IND INZ(FALSE);
  DCL-S SearchString CHAR(64) INZ;
  //-------------------------------------------------------------------------
 
@@ -625,10 +610,13 @@ DCL-PROC searchCatalogue;
    Exec SQL DECLARE c_catalogue_search_reader CURSOR FOR
 
              SELECT IFNULL(catalogues.description, ''), catalogues.catalogue_name,
-                    catalogues.guid
+                    catalogues.guid,
+                    CASE WHEN catalogues.only_current_user IS NOT NULL THEN '1'
+                         ELSE '0' END
                FROM keysafe.catalogues
               WHERE UPPER(catalogues.catalogue_name) CONCAT UPPER(catalogues.description)
                     LIKE RTRIM(UPPER(:SearchString))
+                AND IFNULL(catalogues.only_current_user, SESSION_USER) = SESSION_USER
               ORDER BY catalogues.catalogue_name;
 
    Exec SQL OPEN c_catalogue_search_reader;
@@ -636,7 +624,8 @@ DCL-PROC searchCatalogue;
    DoW ( This.Loop );
 
      Exec SQL FETCH NEXT FROM c_catalogue_search_reader
-               INTO :W2S_Subfile_Line, :W2S_Catalogue_Name, :W2S_GUID;
+               INTO :W2S_Subfile_Line, :W2S_Catalogue_Name,
+                    :W2S_GUID, :PrivateFlag;
 
      If ( SQLCode = 100 ) Or ( W2C_Record_Number = 9999 );
        Exec SQL CLOSE c_catalogue_search_reader;
@@ -646,6 +635,11 @@ DCL-PROC searchCatalogue;
      W2C_Record_Number += 1;
      W2S_RecordNumber = W2C_Record_Number;
      WSDS.ShowSubfileOption = TRUE;
+     If PrivateFlag;
+       W2S_Subfile_Line = COLOR_YLW + W2S_Subfile_Line;
+     Else;
+       W2S_Subfile_Line = COLOR_GRN + W2S_Subfile_Line;
+     EndIf;
      Write KEYSAFEW2S;
 
    EndDo;
@@ -790,9 +784,15 @@ DCL-PROC createNewCatalogue;
 
          Exec SQL INSERT INTO keysafe.catalogues
                   (catalogues.catalogue_name, catalogues.guid,
-                   catalogues.description, catalogues.keytest)
-                  VALUES(:W3_Catalogue_Name, KEYSAFE.GENERATE_GUID(),
-                         RTRIM(:W3_Description), ENCRYPT_TDES('1')) WITH NC;
+                   catalogues.description, catalogues.only_current_user,
+                   catalogues.keytest)
+                  VALUES(:W3_Catalogue_Name,
+                         KEYSAFE.GENERATE_GUID(),
+                         RTRIM(:W3_Description),
+                         CASE WHEN :W3_Only_Current_User = '1'
+                              THEN SESSION_USER
+                              ELSE CAST(NULL AS CHAR) END,
+                         ENCRYPT_TDES('1')) WITH NC;
 
          Success = Success And ( SQLCode = 0 );
 
@@ -1260,8 +1260,8 @@ END-PROC;
 
 
 //**************************************************************************
-// This procedure read the single entry record with the decryption view
 DCL-PROC getCatalogueEntry;
+// This procedure read the single entry record with the decryption view
  DCL-PI *N IND;
   pGUID CHAR(32) CONST;
   pEntryDS LIKEDS(Catalogue_Entry_T);
@@ -1313,7 +1313,8 @@ DCL-PROC checkCatalogueName;
 
  Exec SQL SELECT '1' INTO :RecordFound
             FROM keysafe.catalogues
-           WHERE catalogue_name = :pCatalogueName;
+           WHERE catalogues.catalogue_name = :pCatalogueName
+             AND IFNULL(catalogues.only_current_user, SESSION_USER) = SESSION_USER;
 
  RecordFound = RecordFound And ( SQLCode = 0 );
 

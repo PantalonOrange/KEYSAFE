@@ -1,5 +1,5 @@
 **FREE
-//- Copyright (c) 2020 Christian Brunner
+//- Copyright (c) 2020, 2021 Christian Brunner
 //-
 //- Permission is hereby granted, free of charge, to any person obtaining a copy
 //- of this software and associated documentation files (the "Software"), to deal
@@ -25,4 +25,4 @@
 
 /DEFINE COPYRIGHT
 
-CTL-OPT COPYRIGHT('Copyright (c) 2020 Christian Brunner');
+CTL-OPT COPYRIGHT('Copyright (c) 2020, 2021 Christian Brunner');

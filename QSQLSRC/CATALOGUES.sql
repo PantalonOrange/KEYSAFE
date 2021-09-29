@@ -1,4 +1,4 @@
--- Copyright (c) 2020 Christian Brunner
+-- Copyright (c) 2020,2021 Christian Brunner
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@ CREATE OR REPLACE TABLE KEYSAFE.CATALOGUES
   CATALOGUE_NAME FOR COLUMN CAT_NAME CHAR(30) DEFAULT 'DEFAULT',
   GUID CHAR(32) DEFAULT NULL,
   DESCRIPTION FOR COLUMN DES VARCHAR(128) DEFAULT NULL,
+  ONLY_CURRENT_USER FOR COLUMN ONLYME CHAR(10) DEFAULT NULL ,
   KEYTEST VARCHAR(128) FOR BIT DATA DEFAULT NULL IMPLICITLY HIDDEN,
   CONSTRAINT KEYSAFE.CATALOGUE_PRIMARY_KEY PRIMARY KEY(GUID)
 ) RCDFMT CAT00;
@@ -36,6 +37,7 @@ LABEL ON COLUMN KEYSAFE.CATALOGUES
   CATALOGUE_NAME IS 'Catalogue           Name',
   GUID IS 'Link                Guid',
   DESCRIPTION IS 'Description',
+  ONLY_CURRENT_USER IS 'Only                current             user' ,
   KEYTEST IS 'Key                 Test'
 );
 
@@ -44,6 +46,7 @@ LABEL ON COLUMN KEYSAFE.CATALOGUES
   CATALOGUE_NAME TEXT IS 'Catalogue name',
   GUID TEXT IS 'Link to target catalogue',
   DESCRIPTION TEXT IS 'Description',
+  ONLY_CURRENT_USER TEXT IS 'Only current user' ,
   KEYTEST TEXT IS 'Key test'
 );
 
