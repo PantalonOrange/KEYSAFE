@@ -21,14 +21,6 @@
                           key safe - Journal')
              ENDDO
 
-             CRTRPGMOD  MODULE(QTEMP/GUIDR) +
-                          SRCFILE(&SRCLIB/QRPGLESRC) SRCMBR(*MODULE)
-             CRTSRVPGM  SRVPGM(&OBJLIB/GUID) MODULE(QTEMP/GUIDR) +
-                          EXPORT(*ALL) SRCFILE(&SRCLIB/QSRVSRC) +
-                          TEXT('Secure key store - generate +
-                          guid()') USRPRF(*OWNER)
-             RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(GUID_REG) +
-                          USRPRF(*OWNER) DYNUSRPRF(*OWNER)
              RUNSQLSTM  SRCFILE(&SRCLIB/QSQLSRC) SRCMBR(GEN_GUID) +
                           USRPRF(*OWNER) DYNUSRPRF(*OWNER)
 
