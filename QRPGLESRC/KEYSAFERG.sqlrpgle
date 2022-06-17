@@ -774,11 +774,6 @@ DCL-PROC createNewCatalogue;
 
         Other;
           Exec SQL SET ENCRYPTION PASSWORD = :W3_Password WITH HINT :W3_Password_Hint;
-          Exec SQL INSERT INTO keysafe.history
-                  (catalogue_name, used_password, only_current_user)
-                  VALUES(:W3_Catalogue_Name, RTRIM(:W3_Password),
-                         CASE WHEN :W3_Only_Current_User = '1' THEN SESSION_USER
-                              ELSE CAST(NULL AS CHAR) END);
 
           Clear W3_Password;
           Clear W3_Check_Password;
